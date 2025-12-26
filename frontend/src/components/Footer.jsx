@@ -1,156 +1,122 @@
-// components/Footer.jsx
-import {
-  faFacebook,
-  faSquareInstagram,
-} from "@fortawesome/free-brands-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Facebook, Instagram } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import footerlogo from "../assets/footer-logo-2.png"
-import { useGetProjectTitleQuery } from "@/redux/features/shubamdevApi";
-import { useGetGeneralSettingQueryQuery } from "@/redux/features/adminApi";
-import { Heart, Mail, Phone, MapPin,  Twitter,  Youtube } from "lucide-react"
+import React from 'react';
+import { Heart, MapPin, Phone, Mail, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
-export default function Footer() {
-
-   const navigate = useNavigate()
-
-  const {data, isLoading} = useGetProjectTitleQuery()
-  const {data: genralData, isLoading: genralIsLoading} = useGetGeneralSettingQueryQuery()
-
-  if(isLoading) return <h1>wait...</h1>
-  if(genralIsLoading) return <h1>wait...</h1>
-
-  const titles = data?.titles || []
-
-  // console.log("titles",titles)
-
- 
-
-  // console.log("33333333",data)
-
-  console.log(genralData)
-
-
+const Footer = () => {
+  const Link = ({ to, children, className = "" }) => (
+    <a href={to} className={className}>{children}</a>
+  );
 
   return (
-  <footer className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-black">
-        <div className="absolute inset-0 opacity-[0.08]">
-          <img
-            src="/peaceful-cows-silhouette-in-traditional-indian-gau.jpg"
-            alt="Footer Background"
-            className="w-full h-full object-cover"
-          />
-        </div>
+    <footer className="relative overflow-hidden bg-[#f5f1e8]">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}></div>
       </div>
 
-      <div className="absolute top-0 right-0 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] opacity-50"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-slate-500/10 rounded-full blur-[120px] opacity-50"></div>
+      {/* Decorative Elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-green-100/30 rounded-full blur-[120px]"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-100/30 rounded-full blur-[120px]"></div>
 
       <div className="container mx-auto px-4 py-16 relative z-10">
-        {/* <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 mb-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <h3 className="text-2xl font-bold text-white mb-3">Join Our Mission</h3>
-            <p className="text-gray-300 mb-6 leading-relaxed">
-              Subscribe to our newsletter and stay updated with our cow welfare initiatives
-            </p>
-            <div className="flex gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 backdrop-blur-sm"
-              />
-              <button className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-all hover:scale-105">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div> */}
-
         <div className="grid md:grid-cols-4 gap-10 mb-12">
+          {/* Brand Section */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white" fill="currentColor" />
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-green-100">
+                <Heart className="w-7 h-7 text-green-700" fill="currentColor" />
               </div>
-              <h3 className="text-2xl font-bold text-white">Cow Seva NGO</h3>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">KSNGO</h3>
+                <p className="text-green-700 text-sm font-medium">Cow Seva</p>
+              </div>
             </div>
-            <p className="text-gray-300 leading-relaxed mb-6 text-sm">
+            <p className="text-gray-600 leading-relaxed mb-6 text-sm max-w-md">
               Dedicated to protecting and caring for sacred cows with compassion and commitment. Our mission is to
               provide shelter, medical care, and love to abandoned and injured cows.
             </p>
-            <div className="flex items-center gap-2 text-gray-300">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5" />
+            <div className="flex items-center gap-3 bg-white rounded-xl p-4 w-fit shadow-sm border border-green-100">
+              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <Heart className="w-6 h-6 text-green-700" fill="currentColor" />
               </div>
               <div>
-                <p className="text-xs text-gray-400">Serving since</p>
-                <p className="font-semibold text-white">2013</p>
+                <p className="text-xs text-gray-500">Serving since</p>
+                <p className="font-bold text-gray-800 text-lg">2013</p>
               </div>
             </div>
           </div>
 
+          {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
-              <div className="w-1 h-6 bg-blue-400 rounded-full"></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <div className="w-1 h-6 bg-green-600 rounded-full"></div>
               Quick Links
             </h3>
             <div className="space-y-3">
               {[
+                { to: "/", label: "Home" },
                 { to: "/about", label: "About Us" },
                 { to: "/cows", label: "Our Cows" },
                 { to: "/services", label: "Services" },
                 { to: "/gallery", label: "Gallery" },
                 { to: "/donate", label: "Donate Now" },
-                { to: "/adopt", label: "Adopt a Cow" },
               ].map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="block text-gray-300 hover:text-white transition-all hover:translate-x-1 text-sm"
+                  className="block text-gray-600 hover:text-green-700 hover:translate-x-1 transition-all text-sm group flex items-center gap-2"
                 >
-                  → {link.label}
+                  <span className="text-green-600 group-hover:text-green-700">→</span>
+                  {link.label}
                 </Link>
               ))}
             </div>
           </div>
 
+          {/* Contact Section */}
           <div>
-            <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
-              <div className="w-1 h-6 bg-blue-400 rounded-full"></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <div className="w-1 h-6 bg-green-600 rounded-full"></div>
               Contact Us
             </h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3 text-sm">
-                <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-white" />
+                <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-green-100">
+                  <MapPin className="w-4 h-4 text-green-700" />
                 </div>
-                <span className="text-gray-300 leading-relaxed">123 Gaushala Road, Vrindavan, UP 281121</span>
+                <span className="text-gray-600 leading-relaxed">123 Gaushala Road, Vrindavan, UP 281121</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Phone className="w-4 h-4 text-white" />
+                <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-green-100">
+                  <Phone className="w-4 h-4 text-green-700" />
                 </div>
-                <span className="text-gray-300">+91 98765 43210</span>
+                <span className="text-gray-600">+91 98765 43210</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Mail className="w-4 h-4 text-white" />
+                <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-green-100">
+                  <Mail className="w-4 h-4 text-green-700" />
                 </div>
-                <span className="text-gray-300">contact@cowsevangoorg</span>
+                <span className="text-gray-600">contact@ksngo.org</span>
               </div>
             </div>
 
+            {/* Social Media */}
             <div className="mt-6">
-              <p className="text-xs text-gray-400 mb-3">Follow Us</p>
+              <p className="text-xs text-gray-500 mb-3 font-semibold">Follow Us</p>
               <div className="flex gap-2">
-                {[Facebook, Twitter, Instagram, Youtube].map((Icon, index) => (
+                {[
+                  { Icon: Facebook, label: "Facebook" },
+                  { Icon: Twitter, label: "Twitter" },
+                  { Icon: Instagram, label: "Instagram" },
+                  { Icon: Youtube, label: "YouTube" }
+                ].map(({ Icon, label }) => (
                   <button
-                    key={index}
-                    className="w-9 h-9 bg-white/20 hover:bg-blue-500/30 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                    key={label}
+                    aria-label={label}
+                    className="w-9 h-9 bg-white hover:bg-green-600 border border-green-100 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:-translate-y-1 group shadow-sm"
                   >
-                    <Icon className="w-4 h-4 text-white" />
+                    <Icon className="w-4 h-4 text-green-700 group-hover:text-white transition-colors" />
                   </button>
                 ))}
               </div>
@@ -158,20 +124,21 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Bottom Bar */}
         <div className="relative pt-8">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-gray-300 text-sm">
-            <p>© {new Date().getFullYear()} Cow Seva NGO. All rights reserved.</p>
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-gray-600 text-sm">
+            <p>© {new Date().getFullYear()} KSNGO. All rights reserved.</p>
             <div className="flex items-center gap-2">
               <span>Made with</span>
-              <Heart className="w-4 h-4 text-red-400 animate-pulse" fill="currentColor" />
-              <span>for cows</span>
+              <Heart className="w-4 h-4 text-red-500 animate-pulse" fill="currentColor" />
+              <span>for sacred cows</span>
             </div>
-            <div className="flex gap-4 text-xs">
-              <Link to="/privacy" className="hover:text-white transition-colors">
+            <div className="flex gap-6 text-xs">
+              <Link to="/privacy" className="hover:text-green-700 transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="hover:text-white transition-colors">
+              <Link to="/terms" className="hover:text-green-700 transition-colors">
                 Terms of Service
               </Link>
             </div>
@@ -179,6 +146,7 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-
   );
-}
+};
+
+export default Footer;

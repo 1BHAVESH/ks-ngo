@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,8 @@ import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { useEnquirySendMutation } from "@/redux/features/shubamdevApi";
+import { toast } from "sonner";
 
 /* ------------------ YUP VALIDATION SCHEMA ------------------ */
 const contactSchema = yup.object({
@@ -22,6 +23,12 @@ const contactSchema = yup.object({
     .trim()
     .required("Email is required")
     .email("Enter a valid email"),
+
+  phone: yup
+    .string()
+    .required("Phone number is required")
+    .matches(/^[0-9]+$/, "Only digits are allowed")
+    .length(10, "Phone number must be exactly 10 digits"),
 
   message: yup
     .string()
@@ -40,10 +47,18 @@ export default function ContactPage() {
     resolver: yupResolver(contactSchema),
   });
 
+  const [enquirySend, {data, isLoading}] = useEnquirySendMutation()
+
   /* ------------------ SUBMIT HANDLER ------------------ */
-  const onSubmit = (data) => {
+  const onSubmit = async(data) => {
     console.log("Form Data:", data);
-    alert("Message Sent Successfully! (Demo)\n\nOur team will contact you soon.");
+
+    const response = await enquirySend(data).unwrap()
+
+    if(response.success){
+      toast.success("enquiry send successfully")
+    }
+  
     reset();
   };
 
@@ -128,6 +143,29 @@ export default function ContactPage() {
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="mb-2 block font-semibold text-[#0d3811]">
+                    Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    {...register("phone")}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                    }}
+                    placeholder="enter your phone number"
+                    className="border-sage"
+                  />
+                  {errors.phone && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.phone.message}
                     </p>
                   )}
                 </div>

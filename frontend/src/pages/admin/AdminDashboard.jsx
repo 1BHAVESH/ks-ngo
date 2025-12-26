@@ -1,12 +1,12 @@
 import { Image, FolderKanban, TrendingUp, Eye, MessageCircle } from "lucide-react";
-import { useGetAllContactsQuery, useGetBannersQuery, useGetProjectsQuery, useGetViewAnalyticsQuery } from "@/redux/features/adminApi";
+import { useGetAllEnquiryQuery, useGetBannersQuery, useGetProjectsQuery, useGetViewAnalyticsQuery } from "@/redux/features/adminApi";
 import { Link } from "react-router-dom";
 
 export default function AdminDashboard() {
   const { data: bannersData } = useGetBannersQuery();
   const { data: projectsData } = useGetProjectsQuery();
   const { data: viewsData } = useGetViewAnalyticsQuery();
-  const { data: enquiriesData } = useGetAllContactsQuery();
+  const { data: enquiriesData } = useGetAllEnquiryQuery();
 
   const bannerCount = bannersData?.data?.length || 0;
   const projectCount = projectsData?.data?.length || 0;

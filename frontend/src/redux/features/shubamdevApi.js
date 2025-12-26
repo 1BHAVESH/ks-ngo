@@ -10,9 +10,9 @@ export const shubhamDevApi = createApi({
   }),
   tagTypes: ["Project", "Career", "Faqs"],
   endpoints: (builder) => ({
-    mailSend: builder.mutation({
+    enquirySend: builder.mutation({
       query: (credentials) => ({
-        url: "/mail/send-email",
+        url: "/mail/send-enquiry",
         method: "POST",
         body: credentials,
       }),
@@ -69,7 +69,7 @@ export const shubhamDevApi = createApi({
 });
 
 export const {
-  useMailSendMutation,
+  useEnquirySendMutation,
   useGetProjectsQuery,
   useGetProjectBySlugQuery,
   useGetProjectByIdQuery,

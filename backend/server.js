@@ -1,14 +1,11 @@
 import express from "express";
-import nodemailer from "nodemailer";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import http from "http";              
-import { Server } from "socket.io";   
 
 import connectDB from "./config/db.js";
-import mailRoute from "./routes/mailRoute.js";
+import mailRoute from "./routes/enquiryRoute.js";
 import adminRoute from "./routes/adminRoute.js";
 import bannerRoute from "./routes/bannerRoute.js";
 import projectRoute from "./routes/projectRoute.js";
@@ -20,8 +17,8 @@ import PrivacyPoilcyRoute from "./routes/PolicyRoute.js";
 import genralSettingRoute from "./routes/genralSettingsRoute.js";
 import videoRoute from "./routes/videoRoute.js";
 import jobRoutes from "./routes/jobRoute.js";
-import mediaRoute from "./routes/mediaRoute.js"
-import  excelRoute from "./routes/excelEnquiryRote.js"
+import mediaRoute from "./routes/mediaRoute.js";
+import excelRoute from "./routes/excelEnquiryRote.js";
 
 dotenv.config();
 
@@ -32,8 +29,7 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
-// 🔹 DB connect
-connectDB();
+// 
 
 // 🔹 Middleware
 app.use(
@@ -44,7 +40,7 @@ app.use(
     ],
     credentials: true,
   })
-);  
+);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -62,33 +58,13 @@ app.use("/api", PrivacyPoilcyRoute);
 app.use("/api/view", viewRoute);
 app.use("/api/genral-setting", genralSettingRoute);
 app.use("/api/job-enquiry", jobRoutes);
-app.use("/api/media", mediaRoute)
-app.use("/api/excel-enquiry", excelRoute)
+app.use("/api/media", mediaRoute);
+app.use("/api/excel-enquiry", excelRoute);
 
 // ===============================
-// 🔥 SOCKET.IO SETUP (IMPORTANT)
+// 🚀 NORMAL EXPRESS SERVER
 // ===============================
-const server = http.createServer(app);
-
-export const io = new Server(server, {
-  cors: {
-    origin: [
-      process.env.LOCAL_FRONTEND,
-      process.env.WEBSITE_FRONTEND_URL,
-    ],
-    credentials: true,
-  },
-});
-
-io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("Socket disconnected:", socket.id);
-  });
-});
-
- 
-server.listen(PORT, () => {
-  console.log(`Server running with socket on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  connectDB()
 });

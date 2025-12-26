@@ -8,10 +8,10 @@ export default function Navbar() {
   const links = [
     { path: "/", label: "Home" },
     { path: "/about", label: "About Us" },
-    { path: "/cows", label: "Our Cows" },
+    
     { path: "/services", label: "Services" },
     { path: "/donate", label: "Donate" },
-    { path: "/adopt", label: "Adopt a Cow" },
+    
     { path: "/gallery", label: "Gallery" },
   ];
 

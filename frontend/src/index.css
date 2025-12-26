@@ -182,7 +182,7 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px #fbfdf5 inset !important; /* zinc-800 */
-  -webkit-text-fill-color: white !important;
+  -webkit-text-fill-color: black !important;
 }
 
 .hero-gradient {
@@ -192,4 +192,16 @@ textarea:-webkit-autofill {
       rgba(0, 0, 0, 0) 49.96%,
       #000 99.52%
     );
+}
+
+.bg-sage-light{
+  background-color: #dee9d4;
+}
+
+.text-forest{
+  color: #0d3811;
+}
+
+.text-eart{
+  color: #65504a;
 }

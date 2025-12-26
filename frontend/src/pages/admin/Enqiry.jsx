@@ -1,11 +1,10 @@
 import {
   useDeleteEnquiryMutation,
   useExcelImportEnquiriesMutation,
-  useGetAllContactsQuery,
+  useGetAllEnquiryQuery,
   useGetExcelEnquiriesQuery,
 } from "@/redux/features/adminApi";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { socket } from "@/socket";
 import {
   Search,
   Mail,
@@ -26,10 +25,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import {
-  useGetProjectTitleQuery,
-  useMailSendMutation,
-} from "@/redux/features/shubamdevApi";
+import { useEnquirySendMutation } from "@/redux/features/shubamdevApi";
 import { useForm } from "react-hook-form";
 import * as XLSX from "xlsx";
 import * as yup from "yup";
@@ -53,7 +49,7 @@ export const enquirySchema = yup.object({
     .string()
     .required("Phone number is required")
     .matches(/^[0-9]{10}$/, "Phone must be exactly 10 digits"),
-  project: yup.string().optional(), // Made optional for import
+
   message: yup.string().optional(),
 });
 
@@ -67,18 +63,19 @@ function Enquiry() {
     resolver: yupResolver(enquirySchema),
   });
 
-  const { data, isLoading, error } = useGetAllContactsQuery();
+  const { data, isLoading, error } = useGetAllEnquiryQuery();
   const [excelImportEnquiries] = useExcelImportEnquiriesMutation();
-  const { data: excelData, refetch: refetchExcelData } = useGetExcelEnquiriesQuery();
-  const [deleteEnquiry, { isLoading: deleteLoading }] = useDeleteEnquiryMutation();
-  const [mailSend, { isLoading: mailSendLoading }] = useMailSendMutation();
-  const { data: projectTitleData, isLoading: projectTitleLoading } = useGetProjectTitleQuery();
+  const { data: excelData, refetch: refetchExcelData } =
+    useGetExcelEnquiriesQuery();
+  const [deleteEnquiry, { isLoading: deleteLoading }] =
+    useDeleteEnquiryMutation();
+  const [mailSend, { isLoading: mailSendLoading }] = useEnquirySendMutation();
 
   // State
   const [showImported, setShowImported] = useState(false);
   const [enquiries, setEnquiries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProject, setSelectedProject] = useState("all");
+  //   const [selectedProject, setSelectedProject] = useState("all");
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -99,27 +96,9 @@ function Enquiry() {
     }
   }, [data]);
 
-  // Socket listener for real-time updates
-  useEffect(() => {
-    const handleNewEnquiry = (newEnquiry) => {
-      setEnquiries((prev) => [newEnquiry, ...prev]);
-      // Auto-hide imported view when new enquiry arrives
-      if (showImported) {
-        setShowImported(false);
-      }
-    };
-
-    socket.on("newEnquiry", handleNewEnquiry);
-    return () => socket.off("newEnquiry", handleNewEnquiry);
-  }, [showImported]);
-
   // Filter and sort enquiries
   const filteredEnquiries = useMemo(() => {
     let filtered = showImported ? excelData?.data || [] : enquiries;
-
-    if (selectedProject !== "all") {
-      filtered = filtered.filter((enq) => enq.project === selectedProject);
-    }
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -152,7 +131,13 @@ function Enquiry() {
     }
 
     return filtered;
-  }, [enquiries, excelData, showImported, searchTerm, selectedProject, sortConfig]);
+  }, [
+    enquiries,
+    excelData,
+    showImported,
+    searchTerm,
+    sortConfig,
+  ]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredEnquiries.length / itemsPerPage);
@@ -163,7 +148,7 @@ function Enquiry() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedProject, sortConfig]);
+  }, [searchTerm,  sortConfig]);
 
   const handleSort = useCallback((key) => {
     setSortConfig((prev) => {
@@ -217,7 +202,7 @@ function Enquiry() {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedProject("all");
+
     setSortConfig({ key: null, direction: "asc" });
   };
 
@@ -226,7 +211,7 @@ function Enquiry() {
       "Full Name": enq.fullName,
       Email: enq.email,
       Phone: enq.phone,
-      Project: enq.project,
+     
       Message: enq.message || "",
       "Submitted On": formatDate(enq.createdAt),
     }));
@@ -272,7 +257,6 @@ function Enquiry() {
             fullName: row["Full Name"] || row["fullName"] || "",
             email: row["Email"] || row["email"] || "",
             phone: String(row["Phone"] || row["phone"] || ""),
-            project: row["Project"] || row["project"] || "N/A", // Default to N/A if no project
             message: row["Message"] || row["message"] || "",
           };
 
@@ -280,9 +264,7 @@ function Enquiry() {
             enquirySchema.validateSync(enquiryData, { abortEarly: false });
             validatedData.push(enquiryData);
           } catch (err) {
-            const rowErrors = err.inner.map(
-              (e) => `${e.path}: ${e.message}`
-            );
+            const rowErrors = err.inner.map((e) => `${e.path}: ${e.message}`);
             errors.push({ row: rowNum, errors: rowErrors, data: enquiryData });
           }
         });
@@ -291,7 +273,9 @@ function Enquiry() {
         setImportErrors(errors);
 
         if (validatedData.length === 0 && errors.length > 0) {
-          alert("No valid entries found in the Excel file. Please check the format.");
+          alert(
+            "No valid entries found in the Excel file. Please check the format."
+          );
         }
       } catch (err) {
         alert("Error reading file. Please ensure it's a valid Excel file.");
@@ -310,10 +294,10 @@ function Enquiry() {
 
     try {
       await excelImportEnquiries(importPreview).unwrap();
-      
+
       // Refetch the Excel data immediately after import
       await refetchExcelData();
-      
+
       alert(`Successfully imported ${importPreview.length} enquiries`);
       setShowImportModal(false);
       setImportFile(null);
@@ -337,7 +321,7 @@ function Enquiry() {
     }
   };
 
-  if (isLoading || projectTitleLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 p-4">
         <div className="text-center">
@@ -360,8 +344,6 @@ function Enquiry() {
       </div>
     );
   }
-
-  const uniqueProjects = projectTitleData?.titles || [];
 
   return (
     <div className="min-h-screen bg-gray-900 p-4 sm:p-6 lg:p-8">
@@ -438,7 +420,7 @@ function Enquiry() {
             />
           </div>
 
-          <div className="md:col-span-4 relative">
+          {/* <div className="md:col-span-4 relative">
             <Filter
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
               size={18}
@@ -455,7 +437,7 @@ function Enquiry() {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           <div className="md:col-span-2 relative">
             <select
@@ -473,7 +455,7 @@ function Enquiry() {
             </select>
           </div>
 
-          {(searchTerm || selectedProject !== "all" || sortConfig.key) && (
+          {(searchTerm || sortConfig.key) && (
             <div className="md:col-span-1">
               <button
                 onClick={clearFilters}
@@ -516,14 +498,7 @@ function Enquiry() {
                   Phone {getSortIcon("phone")}
                 </div>
               </th>
-              <th
-                onClick={() => handleSort("project")}
-                className="px-6 py-4 text-left font-semibold cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-2">
-                  Project {getSortIcon("project")}
-                </div>
-              </th>
+
               <th
                 onClick={() => handleSort("createdAt")}
                 className="px-6 py-4 text-left font-semibold cursor-pointer select-none"
@@ -537,7 +512,10 @@ function Enquiry() {
           </thead>
           <tbody className="divide-y divide-gray-700">
             {paginatedEnquiries.map((enquiry) => (
-              <tr key={enquiry._id} className="hover:bg-gray-700 transition-colors">
+              <tr
+                key={enquiry._id}
+                className="hover:bg-gray-700 transition-colors"
+              >
                 <td className="px-6 py-4 text-gray-200">
                   <div className="flex items-center gap-2">
                     <User size={16} />
@@ -553,9 +531,7 @@ function Enquiry() {
                   {enquiry.email}
                 </td>
                 <td className="px-6 py-4 text-gray-300">{enquiry.phone}</td>
-                <td className="px-6 py-4 text-gray-300 truncate">
-                  {enquiry.project}
-                </td>
+
                 <td className="px-6 py-4 text-gray-300 whitespace-nowrap">
                   {formatDate(enquiry.createdAt)}
                 </td>
@@ -623,10 +599,7 @@ function Enquiry() {
                     <Phone className="mr-2 text-yellow-500" size={14} />
                     <span>{enquiry.phone}</span>
                   </div>
-                  <div className="flex items-center text-gray-300 text-sm mb-1">
-                    <MessageSquare className="mr-2 text-yellow-500" size={14} />
-                    <span className="truncate">{enquiry.project}</span>
-                  </div>
+
                   <div className="flex items-center text-gray-400 text-xs mt-2">
                     <Calendar className="mr-2" size={12} />
                     <span>{formatDate(enquiry.createdAt)}</span>
@@ -659,7 +632,8 @@ function Enquiry() {
       {filteredEnquiries.length > 0 && (
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-800 rounded-lg p-4">
           <div className="text-gray-400 text-sm">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredEnquiries.length)} of{" "}
+            Showing {startIndex + 1} to{" "}
+            {Math.min(endIndex, filteredEnquiries.length)} of{" "}
             {filteredEnquiries.length} enquiries
           </div>
 
@@ -737,7 +711,9 @@ function Enquiry() {
                 <User className="text-yellow-500 mt-1 mr-3" size={18} />
                 <div>
                   <p className="text-gray-400 text-sm">Full Name</p>
-                  <p className="text-white text-lg">{selectedEnquiry.fullName}</p>
+                  <p className="text-white text-lg">
+                    {selectedEnquiry.fullName}
+                  </p>
                 </div>
               </div>
 
@@ -745,7 +721,9 @@ function Enquiry() {
                 <Mail className="text-yellow-500 mt-1 mr-3" size={18} />
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-400 text-sm">Email</p>
-                  <p className="text-white break-all">{selectedEnquiry.email}</p>
+                  <p className="text-white break-all">
+                    {selectedEnquiry.email}
+                  </p>
                 </div>
               </div>
 
@@ -758,16 +736,24 @@ function Enquiry() {
               </div>
 
               <div className="flex items-start">
-                <MessageSquare className="text-yellow-500 mt-1 mr-3" size={18} />
+                <MessageSquare
+                  className="text-yellow-500 mt-1 mr-3"
+                  size={18}
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-400 text-sm">Project</p>
-                  <p className="text-white break-words">{selectedEnquiry.project}</p>
+                  <p className="text-white break-words">
+                    {selectedEnquiry.project}
+                  </p>
                 </div>
               </div>
 
               {selectedEnquiry.message && (
                 <div className="flex items-start">
-                  <MessageSquare className="text-yellow-500 mt-1 mr-3" size={18} />
+                  <MessageSquare
+                    className="text-yellow-500 mt-1 mr-3"
+                    size={18}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-gray-400 text-sm">Message</p>
                     <p className="text-white whitespace-pre-wrap break-words">
@@ -781,7 +767,9 @@ function Enquiry() {
                 <Calendar className="text-yellow-500 mt-1 mr-3" size={18} />
                 <div>
                   <p className="text-gray-400 text-sm">Submitted On</p>
-                  <p className="text-white">{formatDate(selectedEnquiry.createdAt)}</p>
+                  <p className="text-white">
+                    {formatDate(selectedEnquiry.createdAt)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -817,7 +805,9 @@ function Enquiry() {
             className="bg-gray-800 p-6 rounded-lg max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-bold text-white mb-4">Confirm Delete</h3>
+            <h3 className="text-xl font-bold text-white mb-4">
+              Confirm Delete
+            </h3>
             <p className="text-gray-300 mb-6">
               Are you sure you want to delete the enquiry from{" "}
               <span className="font-semibold text-yellow-500">
@@ -911,7 +901,10 @@ function Enquiry() {
                       </h3>
                       <div className="max-h-60 overflow-y-auto space-y-2">
                         {importPreview.slice(0, 5).map((entry, idx) => (
-                          <div key={idx} className="bg-gray-800 p-2 rounded text-sm">
+                          <div
+                            key={idx}
+                            className="bg-gray-800 p-2 rounded text-sm"
+                          >
                             <p className="text-white">
                               {entry.fullName} - {entry.email} - {entry.phone}
                             </p>
@@ -934,7 +927,10 @@ function Enquiry() {
                       </h3>
                       <div className="max-h-60 overflow-y-auto space-y-2">
                         {importErrors.map((error, idx) => (
-                          <div key={idx} className="bg-gray-800 p-2 rounded text-sm">
+                          <div
+                            key={idx}
+                            className="bg-gray-800 p-2 rounded text-sm"
+                          >
                             <p className="text-red-400 font-semibold">
                               Row {error.row}:
                             </p>
@@ -1006,7 +1002,10 @@ function Enquiry() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmitEnquiry)} className="space-y-4">
+            <form
+              onSubmit={handleSubmit(onSubmitEnquiry)}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-gray-400 text-sm mb-2">
                   Full Name <span className="text-red-500">*</span>
@@ -1045,7 +1044,9 @@ function Enquiry() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
@@ -1070,34 +1071,8 @@ function Enquiry() {
                   />
                 </div>
                 {errors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">
-                  Project <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Filter
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                    size={18}
-                  />
-                  <select
-                    {...register("project")}
-                    className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  >
-                    <option value="">Select a project</option>
-                    {uniqueProjects.map((project) => (
-                      <option key={project._id} value={project.title}>
-                        {project.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {errors.project && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.project.message}
+                    {errors.phone.message}
                   </p>
                 )}
               </div>

@@ -223,7 +223,7 @@ export const adminApi = createApi({
 
       providesTags: ["Admin"],
     }),
-    getAllContacts: builder.query({
+    getAllEnquiry: builder.query({
       query: () => ({
         url: "/mail/",
         method: "GET",
@@ -355,7 +355,7 @@ export const {
   useGetViewAnalyticsQuery,
   useCreateGeneralSettingMutation,
   useGetGeneralSettingQueryQuery,
-  useGetAllContactsQuery,
+  useGetAllEnquiryQuery,
   useDeleteEnquiryMutation,
   useDeleteJobBYIdMutation,
   useGetApplicationsQuery,
