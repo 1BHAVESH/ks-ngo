@@ -41,6 +41,8 @@ import ServicesPage from "@/pages/Services";
 import GalleryPage from "@/pages/Gallery";
 import Enquiry from "@/pages/admin/Enqiry";
 import DonatePage from "@/pages/Donate";
+import AdminDonation from "@/pages/admin/AdminDonation";
+import CowImageManagment from "@/pages/admin/ProjectManagement";
 
 export default function AppRoutes() {
   return (
@@ -75,8 +77,9 @@ export default function AppRoutes() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="banners" element={<BannerManagement />} />
-          {/* <Route path="projects" element={<ProjectManagement />} /> */}
-          <Route path="home-page" element={<HomePage />} />
+          <Route path="donations" element={<AdminDonation />} />
+          {/* <Route path="home-page" element={<HomePage />} /> */}
+          <Route path="cow-image" element={<CowImageManagment />} />
           <Route path="career" element={<CarrerAdmin />} />
           <Route path="faq" element={<AdminFaq />} />
           <Route path="privacy-policy" element={<PolicyEditor />} />

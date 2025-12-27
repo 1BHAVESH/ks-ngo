@@ -2,7 +2,7 @@ import {
   useDeleteEnquiryMutation,
   useExcelImportEnquiriesMutation,
   useGetAllEnquiryQuery,
-  useGetExcelEnquiriesQuery,
+  useSearchEnquiriesQuery,
 } from "@/redux/features/adminApi";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
@@ -15,7 +15,6 @@ import {
   Eye,
   Trash2,
   X,
-  Filter,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -49,7 +48,6 @@ export const enquirySchema = yup.object({
     .string()
     .required("Phone number is required")
     .matches(/^[0-9]{10}$/, "Phone must be exactly 10 digits"),
-
   message: yup.string().optional(),
 });
 
@@ -63,19 +61,15 @@ function Enquiry() {
     resolver: yupResolver(enquirySchema),
   });
 
-  const { data, isLoading, error } = useGetAllEnquiryQuery();
+  const { data, isLoading, error, refetch } = useGetAllEnquiryQuery();
   const [excelImportEnquiries] = useExcelImportEnquiriesMutation();
-  const { data: excelData, refetch: refetchExcelData } =
-    useGetExcelEnquiriesQuery();
   const [deleteEnquiry, { isLoading: deleteLoading }] =
     useDeleteEnquiryMutation();
   const [mailSend, { isLoading: mailSendLoading }] = useEnquirySendMutation();
 
   // State
-  const [showImported, setShowImported] = useState(false);
   const [enquiries, setEnquiries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  //   const [selectedProject, setSelectedProject] = useState("all");
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -89,6 +83,13 @@ function Enquiry() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+   const { data: searchResult, isFetching } = useSearchEnquiriesQuery(
+    searchTerm,
+    {
+      skip: !searchTerm,
+    }
+  );
+
   // Load data from API
   useEffect(() => {
     if (data?.data) {
@@ -98,7 +99,7 @@ function Enquiry() {
 
   // Filter and sort enquiries
   const filteredEnquiries = useMemo(() => {
-    let filtered = showImported ? excelData?.data || [] : enquiries;
+    let filtered = enquiries;
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -131,13 +132,7 @@ function Enquiry() {
     }
 
     return filtered;
-  }, [
-    enquiries,
-    excelData,
-    showImported,
-    searchTerm,
-    sortConfig,
-  ]);
+  }, [enquiries, searchTerm, sortConfig]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredEnquiries.length / itemsPerPage);
@@ -148,7 +143,7 @@ function Enquiry() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm,  sortConfig]);
+  }, [searchTerm, sortConfig]);
 
   const handleSort = useCallback((key) => {
     setSortConfig((prev) => {
@@ -202,16 +197,15 @@ function Enquiry() {
 
   const clearFilters = () => {
     setSearchTerm("");
-
     setSortConfig({ key: null, direction: "asc" });
   };
 
   const handleExportToExcel = useCallback(() => {
     const exportData = filteredEnquiries.map((enq) => ({
-      "Full Name": enq.fullName,
-      Email: enq.email,
-      Phone: enq.phone,
-     
+      fullName: enq.fullName || "",
+      email: enq.email || "",
+      phone: enq.phone || "",
+      
       Message: enq.message || "",
       "Submitted On": formatDate(enq.createdAt),
     }));
@@ -293,18 +287,17 @@ function Enquiry() {
     }
 
     try {
-      await excelImportEnquiries(importPreview).unwrap();
-
-      // Refetch the Excel data immediately after import
-      await refetchExcelData();
+      console.log(importFile)
+      await excelImportEnquiries(importFile).unwrap();
+      
+      // Refetch data to show imported enquiries
+      await refetch();
 
       alert(`Successfully imported ${importPreview.length} enquiries`);
       setShowImportModal(false);
       setImportFile(null);
       setImportPreview([]);
       setImportErrors([]);
-      // Switch to imported view
-      setShowImported(true);
     } catch (err) {
       console.error("Excel import error:", err);
       alert("Failed to import Excel enquiries");
@@ -316,6 +309,8 @@ function Enquiry() {
       await mailSend(formData);
       reset();
       setShowAddModal(false);
+      // Refetch to show new enquiry
+      refetch();
     } catch (err) {
       console.error(err);
     }
@@ -352,36 +347,14 @@ function Enquiry() {
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
             Enquiry Management
-            {showImported && (
-              <span className="ml-3 text-sm bg-blue-600 text-white px-3 py-1 rounded-full">
-                Showing Imported Data
-              </span>
-            )}
           </h1>
           <p className="text-gray-400">
             Total: {enquiries.length} | Filtered: {filteredEnquiries.length}
-            {showImported && ` | Imported: ${excelData?.data?.length || 0}`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {showImported && (
-            <button
-              onClick={() => {
-                setShowImported(false);
-                refetchExcelData(); // Refresh data when switching views
-              }}
-              className="bg-gray-600 cursor-pointer hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold"
-            >
-              <X size={20} />
-              Clear Imported View
-            </button>
-          )}
           <button
-            onClick={() => {
-              setShowImportModal(true);
-              // Refetch latest Excel data when opening import modal
-              refetchExcelData();
-            }}
+            onClick={() => setShowImportModal(true)}
             className="bg-green-500 cursor-pointer hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold"
           >
             <Upload size={20} />
@@ -392,7 +365,7 @@ function Enquiry() {
             className="bg-purple-500 cursor-pointer hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-semibold"
           >
             <Download size={20} />
-            Export {showImported ? "Imported" : "All"}
+            Export
           </button>
           <button
             onClick={() => setShowAddModal(true)}
@@ -419,25 +392,6 @@ function Enquiry() {
               className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
-
-          {/* <div className="md:col-span-4 relative">
-            <Filter
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              size={18}
-            />
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 appearance-none"
-            >
-              <option value="all">All Projects</option>
-              {uniqueProjects.map((project) => (
-                <option key={project._id} value={project.title}>
-                  {project.title}
-                </option>
-              ))}
-            </select>
-          </div> */}
 
           <div className="md:col-span-2 relative">
             <select
@@ -498,7 +452,6 @@ function Enquiry() {
                   Phone {getSortIcon("phone")}
                 </div>
               </th>
-
               <th
                 onClick={() => handleSort("createdAt")}
                 className="px-6 py-4 text-left font-semibold cursor-pointer select-none"
@@ -520,18 +473,12 @@ function Enquiry() {
                   <div className="flex items-center gap-2">
                     <User size={16} />
                     {enquiry.fullName}
-                    {showImported && (
-                      <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
-                        Imported
-                      </span>
-                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-gray-300 truncate">
                   {enquiry.email}
                 </td>
                 <td className="px-6 py-4 text-gray-300">{enquiry.phone}</td>
-
                 <td className="px-6 py-4 text-gray-300 whitespace-nowrap">
                   {formatDate(enquiry.createdAt)}
                 </td>
@@ -539,13 +486,13 @@ function Enquiry() {
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => setSelectedEnquiry(enquiry)}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-3 py-1 rounded transition-colors"
+                      className="bg-yellow-500 cursor-pointer hover:bg-yellow-600 text-gray-900 px-3 py-1 rounded transition-colors"
                     >
                       <Eye size={16} />
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(enquiry)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-colors"
+                      className="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-3 py-1 rounded transition-colors"
                       disabled={deleteLoading}
                     >
                       <Trash2 size={16} />
@@ -585,11 +532,6 @@ function Enquiry() {
                     <h3 className="font-semibold text-white">
                       {enquiry.fullName}
                     </h3>
-                    {showImported && (
-                      <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
-                        Imported
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center text-gray-300 text-sm mb-1">
                     <Mail className="mr-2 text-yellow-500" size={14} />
@@ -599,7 +541,6 @@ function Enquiry() {
                     <Phone className="mr-2 text-yellow-500" size={14} />
                     <span>{enquiry.phone}</span>
                   </div>
-
                   <div className="flex items-center text-gray-400 text-xs mt-2">
                     <Calendar className="mr-2" size={12} />
                     <span>{formatDate(enquiry.createdAt)}</span>
@@ -686,7 +627,7 @@ function Enquiry() {
         </div>
       )}
 
-      {/* Modals remain the same - View Details Modal */}
+      {/* View Details Modal */}
       {selectedEnquiry && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -873,110 +814,43 @@ function Enquiry() {
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={handleFileSelect}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-500 file:text-white file:cursor-pointer hover:file:bg-green-600"
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg"
                 />
-                <p className="text-gray-500 text-xs mt-1">
-                  Supported formats: .xlsx, .xls
-                </p>
               </div>
 
               {importFile && (
-                <>
-                  <div className="bg-gray-700 p-4 rounded-lg">
-                    <h3 className="text-white font-semibold mb-2">
-                      File: {importFile.name}
-                    </h3>
-                    <p className="text-gray-300 text-sm">
-                      Valid Entries: {importPreview.length}
-                    </p>
-                    <p className="text-gray-300 text-sm">
-                      Invalid Entries: {importErrors.length}
-                    </p>
-                  </div>
-
+                <div className="bg-gray-700 p-4 rounded-lg">
+                  <p className="text-white font-semibold">
+                    File Selected: {importFile.name}
+                  </p>
                   {importPreview.length > 0 && (
-                    <div className="bg-gray-700 p-4 rounded-lg">
-                      <h3 className="text-green-500 font-semibold mb-3">
-                        ✓ Valid Entries ({importPreview.length})
-                      </h3>
-                      <div className="max-h-60 overflow-y-auto space-y-2">
-                        {importPreview.slice(0, 5).map((entry, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-gray-800 p-2 rounded text-sm"
-                          >
-                            <p className="text-white">
-                              {entry.fullName} - {entry.email} - {entry.phone}
-                            </p>
-                            <p className="text-gray-400">{entry.project}</p>
-                          </div>
-                        ))}
-                        {importPreview.length > 5 && (
-                          <p className="text-gray-400 text-sm">
-                            ... and {importPreview.length - 5} more
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    <p className="text-green-400 text-sm mt-2">
+                      ✓ {importPreview.length} valid entries found
+                    </p>
                   )}
-
                   {importErrors.length > 0 && (
-                    <div className="bg-gray-700 p-4 rounded-lg">
-                      <h3 className="text-red-500 font-semibold mb-3">
-                        ✗ Invalid Entries ({importErrors.length})
-                      </h3>
-                      <div className="max-h-60 overflow-y-auto space-y-2">
-                        {importErrors.map((error, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-gray-800 p-2 rounded text-sm"
-                          >
-                            <p className="text-red-400 font-semibold">
-                              Row {error.row}:
-                            </p>
-                            <ul className="text-gray-300 list-disc list-inside">
-                              {error.errors.map((err, i) => (
-                                <li key={i}>{err}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <p className="text-yellow-400 text-sm mt-2">
+                      ⚠ {importErrors.length} entries have errors
+                    </p>
                   )}
-
-                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-                    <button
-                      onClick={() => {
-                        setShowImportModal(false);
-                        setImportFile(null);
-                        setImportPreview([]);
-                        setImportErrors([]);
-                      }}
-                      className="w-full cursor-pointer sm:w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleImport}
-                      disabled={importPreview.length === 0 || mailSendLoading}
-                      className="w-full cursor-pointer sm:w-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded transition-colors font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {mailSendLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Importing...
-                        </>
-                      ) : (
-                        <>
-                          <Upload size={18} />
-                          Import {importPreview.length} Enquiries
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </>
+                </div>
               )}
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || importPreview.length === 0}
+                  className="px-4 py-2 cursor-pointer bg-green-500 hover:bg-green-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Import Excel
+                </button>
+              </div>
             </div>
           </div>
         </div>

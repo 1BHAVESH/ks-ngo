@@ -1,53 +1,66 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/pagination";
+
+import img1 from "../../public/brown-and-white-indian-gir-cow-in-sanctuary.jpg"
+import img2 from "../../public/peaceful-cow-grazing-in-green-pasture-indian-gaush.jpg"
+import img3 from "../../public/elderly-mixed-breed-cow-in-shelter.jpg"
+
+
 export default function HeroImage() {
+  const slides = [
+    {
+      img: img1,
+      title: "Serving & Protecting Cows with Compassion",
+      text: "Join us in our mission to rescue, rehabilitate, and provide sanctuary for sacred cows in need."
+    },
+    {
+      img: img2,
+      title: "Your Support Saves Innocent Lives",
+      text: "Be a part of our journey to care for and protect abandoned cows."
+    },
+    {
+      img: img3,
+      title: "Adopt a Cow — Share Your Love",
+      text: "Give a cow the life she deserves by adopting and supporting her care."
+    },
+  ];
+
   return (
-    <section className="relative bg-[#f8f1e3] py-20 md:py-32 overflow-hidden">
-      
-      {/* Background Image */}
-      <div className="absolute inset-0 opacity-20">
-        <img
-          src="/peaceful-cow-grazing-in-green-pasture-indian-gaush.jpg"
-          alt="Cow grazing peacefully"
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <section className="relative bg-[#f8f1e3] overflow-hidden">
 
-      {/* Content */}
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+      <Swiper
+        modules={[Autoplay, Pagination]}
+        autoplay={{ delay: 3500, disableOnInteraction: false }}
+        pagination={{ clickable: true }}
+        loop
+        className="h-[420px] md:h-[560px]"
+      >
+        {slides.map((s, i) => (
+          <SwiperSlide key={i}>
+            <div className="relative h-full">
+              
+              {/* BG IMAGE */}
+              <img
+                src={s.img}
+                className="w-full h-full object-cover"
+              />
 
-          <h1 className="text-4xl md:text-6xl font-bold text-[#2F6B3F] mb-6 text-balance">
-            Serving & Protecting Cows with Compassion
-          </h1>
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-black/40" />
 
-          <p className="text-lg md:text-xl text-[#5B4636] mb-8 text-pretty">
-            Join us in our mission to rescue, rehabilitate, and provide sanctuary
-            for sacred cows in need.
-          </p>
+              {/* CONTENT */}
+             
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              size="lg"
-              className="bg-[#2F6B3F] hover:bg-[#2F6B3F]/90 text-[#f8f1e3]"
-            >
-              <Link to="/donate">Donate Now</Link>
-            </Button>
-
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-[#2F6B3F] text-[#2F6B3F] hover:bg-[#C1D9C5] bg-transparent"
-            >
-              <Link to="/adopt">Adopt a Cow</Link>
-            </Button>
-          </div>
-
-        </div>
-      </div>
     </section>
   );
 }

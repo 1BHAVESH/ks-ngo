@@ -311,11 +311,16 @@ export const adminApi = createApi({
       invalidatesTags: ["Media"]
     }),
     excelImportEnquiries: builder.mutation({
-      query: (data) => ({
-        url: `/excel-enquiry/create-excel-eqnuiry`,
-        method: "POST",
-        body: data
-      }),
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("excelFile", file); // 👈 IMPORTANT
+
+        return {
+          url: `/excel-enquiry/create-excel-eqnuiry`,
+          method: "POST",
+          body: formData,
+        };
+      },
     }),
     getExcelEnquiries: builder.query({
       query: () => ({
@@ -323,6 +328,27 @@ export const adminApi = createApi({
         method: "GET",
       }),
      
+    }),
+
+    sendDonate: builder.mutation({
+      query: (data) => ({
+        url: "/donate/donate-send",
+        method: "POST",
+        body: data
+      })
+    }),
+     getDonate: builder.query({
+      query: () => ({
+        url: "/donate/get-all-donation",
+        method: "GET",
+        
+      })
+    }),
+    searchEnquiries: builder.query({
+      query: (q) => ({
+        url: `/excel-enquiry/search?q=${encodeURIComponent(q)}`,
+        method: "GET",
+      }),
     }),
   }),
 });
@@ -366,5 +392,8 @@ export const {
   useDeleteMediaPostMutation,
   useToggleMediaPostStatusMutation,
   useExcelImportEnquiriesMutation,
-  useGetExcelEnquiriesQuery
+  useGetExcelEnquiriesQuery,
+  useSendDonateMutation,
+  useGetDonateQuery,
+  useSearchEnquiriesQuery
 } = adminApi;

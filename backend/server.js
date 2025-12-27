@@ -19,6 +19,7 @@ import videoRoute from "./routes/videoRoute.js";
 import jobRoutes from "./routes/jobRoute.js";
 import mediaRoute from "./routes/mediaRoute.js";
 import excelRoute from "./routes/excelEnquiryRote.js";
+import donateRoute from "./routes/DonateRoute.js"
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use("/api/genral-setting", genralSettingRoute);
 app.use("/api/job-enquiry", jobRoutes);
 app.use("/api/media", mediaRoute);
 app.use("/api/excel-enquiry", excelRoute);
+app.use("/api/donate", donateRoute)
 
 // ===============================
 // 🚀 NORMAL EXPRESS SERVER

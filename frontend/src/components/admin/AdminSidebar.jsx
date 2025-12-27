@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Image, FolderKanban, LogOut, Menu, X, HomeIcon, Briefcase, Newspaper, Settings, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Image, FolderKanban, LogOut, Menu, X, HomeIcon, Briefcase, Newspaper, Settings, MessageCircle, ImageIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -15,8 +15,13 @@ const navItems = [
     icon: Image,
   },
   {
-    name: "Projects",
-    path: "/admin/projects",
+    name: "Cow-Image",
+    path: "/admin/cow-image",
+    icon: ImageIcon
+  },
+  {
+    name: "Donation",
+    path: "/admin/donations",
     icon: FolderKanban,
   },
   {
@@ -74,7 +79,7 @@ export default function AdminSidebar() {
   const SidebarContent = () => (
     <>
       <div className="p-6 border-b border-zinc-800">
-        <h1 className="text-xl font-bold text-[#d4af37]">Subham Developers</h1>
+        <h1 className="text-xl font-bold text-[#d4af37]">KSNGO</h1>
         <p className="text-zinc-400 text-sm">Admin Panel</p>
       </div>
 
