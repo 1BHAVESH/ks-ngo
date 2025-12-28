@@ -24,27 +24,7 @@ const navItems = [
     path: "/admin/donations",
     icon: FolderKanban,
   },
-  {
-    name: "Home-Page",
-    path: "/admin/home-page",
-    icon: HomeIcon
-  },
-  {
-    name: "Carrer",
-    path: "/admin/career",
-    icon: Briefcase
-  },
-  {
-    name: "FAQs",
-    path: "/admin/faq",
-    icon: Briefcase
-   
-  },
-  {
-    name: "privecy-policy",
-    path: "/admin/privacy-policy",
-    icon: Newspaper
-  },
+  
   {
     name: "genral-setting",
     path: "/admin/genral-settings",
@@ -55,16 +35,8 @@ const navItems = [
     path: "/admin/get-enquiry",
     icon: MessageCircle
   },
-  {
-    name: "job-enquiry",
-    path: "job-enquiry",
-    icon: MessageCircle
-  },
-  {
-    name: "Media Posts",
-    path: "media-posts",
-    icon: Newspaper
-  }
+  
+  
 ];
 
 export default function AdminSidebar() {
@@ -142,3 +114,68 @@ export default function AdminSidebar() {
     </>
   );
 }
+
+
+// const navItems = [
+//   {
+//     name: "Dashboard",
+//     path: "/admin/dashboard",
+//     icon: LayoutDashboard,
+//   },
+//   {
+//     name: "Banners",
+//     path: "/admin/banners",
+//     icon: Image,
+//   },
+//   {
+//     name: "Cow-Image",
+//     path: "/admin/cow-image",
+//     icon: ImageIcon
+//   },
+//   {
+//     name: "Donation",
+//     path: "/admin/donations",
+//     icon: FolderKanban,
+//   },
+//   {
+//     name: "Home-Page",
+//     path: "/admin/home-page",
+//     icon: HomeIcon
+//   },
+//   {
+//     name: "Carrer",
+//     path: "/admin/career",
+//     icon: Briefcase
+//   },
+//   {
+//     name: "FAQs",
+//     path: "/admin/faq",
+//     icon: Briefcase
+   
+//   },
+//   {
+//     name: "privecy-policy",
+//     path: "/admin/privacy-policy",
+//     icon: Newspaper
+//   },
+//   {
+//     name: "genral-setting",
+//     path: "/admin/genral-settings",
+//     icon: Settings
+//   },
+//   {
+//     name: "Enquiry",
+//     path: "/admin/get-enquiry",
+//     icon: MessageCircle
+//   },
+//   {
+//     name: "job-enquiry",
+//     path: "job-enquiry",
+//     icon: MessageCircle
+//   },
+//   {
+//     name: "Media Posts",
+//     path: "media-posts",
+//     icon: Newspaper
+//   }
+// ];

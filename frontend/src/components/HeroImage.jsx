@@ -39,7 +39,7 @@ export default function HeroImage() {
         autoplay={{ delay: 3500, disableOnInteraction: false }}
         pagination={{ clickable: true }}
         loop
-        className="h-[420px] md:h-[560px]"
+        className="h-[420px] md:h-[500px]"
       >
         {slides.map((s, i) => (
           <SwiperSlide key={i}>

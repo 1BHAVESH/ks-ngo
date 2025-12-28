@@ -12,7 +12,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+import { 
+  useCreateCowImageMutation, 
+  useUpdateCowImageMutation 
+} from '@/redux/features/adminApi';
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/";
+
 const CowForm = ({ open, onOpenChange, cow, length }) => {
+
+  const [createCowImage] = useCreateCowImageMutation();
+  const [updateCowImage] = useUpdateCowImageMutation();
+
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -31,11 +42,13 @@ const CowForm = ({ open, onOpenChange, cow, length }) => {
     },
   });
 
+  // ===== Prefill Form On Edit =====
   useEffect(() => {
     if (cow) {
-      setValue('title', cow.title);
-      setValue('order', cow.order);
-      setImagePreview(cow.imageUrl);
+      setValue("title", cow.title);
+      setValue("order", cow.displayOrder);
+
+      setImagePreview(`${API_URL}${cow.image}`);
     } else {
       reset({
         title: "",
@@ -46,46 +59,76 @@ const CowForm = ({ open, onOpenChange, cow, length }) => {
     }
   }, [cow, reset, setValue]);
 
+
+  // ===== Image Select Handler =====
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+
     if (file) {
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      
-      if (file.size > maxSize) {
-        alert('Image size must be less than 5MB');
-        e.target.value = null;
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image must be less than 5MB");
         return;
       }
-      
+
       if (!file.type.startsWith("image/")) {
-        alert('Please upload an image file');
-        e.target.value = null;
+        alert("Please upload a valid image");
         return;
       }
-      
+
       setSelectedImage(file);
+
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
-  const onSubmit = (data) => {
-    const formData = {
-      title: data.title,
-      order: data.order,
-      imageUrl: imagePreview,
-      image: selectedImage
-    };
 
-    console.log('Form submitted:', formData);
-    
-    // Here you would typically call your API or parent handler
-    // For example: onSave(formData);
-    
-    handleClose();
+  // ===== SUBMIT (CREATE + UPDATE BOTH) =====
+  const onSubmit = async (data) => {
+
+    // create mode me image zaroori hai
+    if (!isEditing && !selectedImage) {
+      alert("Please upload an image");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("title", data.title);
+    formData.append("order", data.order);
+
+    if (selectedImage) {
+      formData.append("image", selectedImage);
+    }
+
+    try {
+
+      if (isEditing) {
+        // 🔥 UPDATE
+        await updateCowImage({
+          id: cow._id,
+          formData
+        }).unwrap();
+
+        console.log("Cow Updated");
+
+      } else {
+        // 🔥 CREATE
+        await createCowImage(formData).unwrap();
+
+        console.log("Cow Created");
+      }
+
+      handleClose();
+
+    } catch (err) {
+      console.log(err);
+    }
   };
 
+
+  // ===== CLOSE FORM =====
   const handleClose = () => {
     onOpenChange(false);
     reset();
@@ -93,10 +136,6 @@ const CowForm = ({ open, onOpenChange, cow, length }) => {
     setSelectedImage(null);
   };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    handleSubmit(onSubmit)(e);
-  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -108,54 +147,57 @@ const CowForm = ({ open, onOpenChange, cow, length }) => {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Cow Name */}
+
+          {/* NAME */}
           <div className="space-y-2">
             <Label htmlFor="title">
               Cow Name <span className="text-red-500">*</span>
             </Label>
+
             <Input
               id="title"
-              placeholder="Enter cow name"
               className="bg-zinc-800 border-zinc-700"
+              placeholder="Enter cow name"
               {...register("title", {
                 required: "Cow name is required",
-                validate: (value) =>
-                  value.trim().length > 0 || "Name cannot be empty",
               })}
             />
+
             {errors.title && (
               <p className="text-red-500 text-sm">{errors.title.message}</p>
             )}
           </div>
 
-          {/* Image Upload */}
+
+          {/* IMAGE */}
           <div className="space-y-2">
             <Label>
               Cow Image <span className="text-red-500">*</span>
             </Label>
+
             {imagePreview ? (
               <div className="relative">
                 <img
                   src={imagePreview}
-                  alt="Preview"
                   className="w-full h-48 object-cover rounded-lg"
                 />
+
                 <button
                   type="button"
                   onClick={() => {
                     setImagePreview(null);
                     setSelectedImage(null);
                   }}
-                  className="absolute cursor-pointer top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                  className="absolute top-2 right-2 bg-red-500 rounded-full p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer hover:border-[#d4af37] transition-colors">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer">
                 <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-                <span className="text-zinc-400 text-sm">Click to upload image</span>
-                <span className="text-red-500 text-xs mt-1">Max: 5MB</span>
+                <span className="text-zinc-400 text-sm">Upload Image</span>
+
                 <input
                   type="file"
                   accept="image/*"
@@ -166,43 +208,40 @@ const CowForm = ({ open, onOpenChange, cow, length }) => {
             )}
           </div>
 
-          {/* Display Order */}
+
+          {/* ORDER */}
           <div className="space-y-2">
-            <Label htmlFor="order">Display Order</Label>
+            <Label>Display Order</Label>
+
             <Input
-              id="order"
               type="number"
-              placeholder="0"
-              min="0"
-              max={length || 100}
               className="bg-zinc-800 border-zinc-700"
               {...register("order", {
                 valueAsNumber: true,
-                validate: (value) => value >= 0 || "Order cannot be negative",
               })}
             />
-            {errors.order && (
-              <p className="text-red-500 text-sm">{errors.order.message}</p>
-            )}
           </div>
 
-          {/* Form Actions */}
+
+          {/* BUTTONS */}
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
-              className="bg-zinc-700 text-white hover:bg-zinc-600 cursor-pointer"
+              className="bg-zinc-700"
             >
               Cancel
             </Button>
+
             <Button
-              onClick={handleFormSubmit}
-              className="bg-[#d4af37] text-black hover:bg-[#c4a137] cursor-pointer"
+              onClick={handleSubmit(onSubmit)}
+              className="bg-[#d4af37] text-black"
             >
               {isEditing ? "Update Cow" : "Add Cow"}
             </Button>
           </DialogFooter>
+
         </div>
       </DialogContent>
     </Dialog>

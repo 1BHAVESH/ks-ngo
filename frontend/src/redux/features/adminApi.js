@@ -16,7 +16,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Admin", "Banner", "Project", "Career", "Faq", "Media"],
+  tagTypes: ["Admin", "Banner", "CowImage", "Career", "Faq", "Media"],
   endpoints: (builder) => ({
     adminLogin: builder.mutation({
       query: (credentials) => ({
@@ -94,32 +94,32 @@ export const adminApi = createApi({
       invalidatesTags: ["Banner"],
     }),
 
-    getProjects: builder.query({
-      query: () => "/projects",
-      providesTags: ["Project"],
+    getCows: builder.query({
+      query: () => "/cow-image/all",
+      providesTags: ["CowImage"],
     }),
-    createProject: builder.mutation({
+    createCowImage: builder.mutation({
       query: (formData) => ({
-        url: "/projects",
+        url: "/cow-image/create-cow-image",
         method: "POST",
         body: formData,
       }),
-      invalidatesTags: ["Project"],
+      invalidatesTags: ["CowImage"],
     }),
-    updateProject: builder.mutation({
+    updateCowImage: builder.mutation({
       query: ({ id, formData }) => ({
-        url: `/projects/${id}`,
+        url: `/cow-image/update/${id}`,
         method: "PUT",
         body: formData,
       }),
-      invalidatesTags: ["Project"],
+      invalidatesTags: ["CowImage"],
     }),
-    deleteProject: builder.mutation({
+    deleteCow: builder.mutation({
       query: (id) => ({
-        url: `/projects/${id}`,
+        url: `/cow-image/cow/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Project"],
+      invalidatesTags: ["CowImage"],
     }),
 
     createJob: builder.mutation({
@@ -364,10 +364,10 @@ export const {
   useCreateBannerMutation,
   useUpdateBannerMutation,
   useDeleteBannerMutation,
-  useGetProjectsQuery,
-  useCreateProjectMutation,
-  useUpdateProjectMutation,
-  useDeleteProjectMutation,
+  useGetCowsQuery,
+  useCreateCowImageMutation,
+  useUpdateCowImageMutation,
+  useDeleteCowMutation,
   useCreateJobMutation,
   useGetJobQuery,
   useUpdateJobMutation,

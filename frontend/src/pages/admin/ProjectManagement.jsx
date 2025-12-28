@@ -1,70 +1,124 @@
-import CowForm from '@/components/admin/ProjectForm';
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import CowForm from "@/components/admin/ProjectForm";
+import { useDeleteCowMutation, useGetCowsQuery,  } from "@/redux/features/adminApi";
 
-const ProjectManagement = () => {
-  const [cows] = useState([
-    {
-      id: 1,
-      name: 'Bessie',
-      image: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=200&h=200&fit=crop'
-    },
-    {
-      id: 2,
-      name: 'Daisy',
-      image: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=200&h=200&fit=crop'
-    },
-    {
-      id: 3,
-      name: 'Buttercup',
-      image: 'https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?w=200&h=200&fit=crop'
-    },
-    {
-      id: 4,
-      name: 'Molly',
-      image: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=200&h=200&fit=crop'
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/";
+
+export default function ProjectManagement() {
+
+  const { data, isLoading, refetch } = useGetCowsQuery();
+
+  const [deleteCow] = useDeleteCowMutation();
+
+  const [open, setOpen] = useState(false);
+  const [selectedCow, setSelectedCow] = useState(null);
+
+  if (isLoading) return <h1 className="text-white">Loading...</h1>;
+
+  const cows = data?.data || [];
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this cow?")) return;
+
+    try {
+      await deleteCow(id).unwrap();
+      refetch(); // refresh table
+    } catch (err) {
+      console.log(err);
+      alert("Delete failed");
     }
-  ]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-6">Cow Management</h1>
-        
-        {/* Cow Form Component */}
-        <div className="mb-8">
-          <CowForm />
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-white">Cow Management</h1>
+
+          <button
+            onClick={() => {
+              setSelectedCow(null);
+              setOpen(true);
+            }}
+            className="bg-green-600 px-4 py-2 rounded text-white cursor-pointer"
+          >
+            + Add Cow
+          </button>
         </div>
 
-        {/* Cow Table */}
-        <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+        {/* FORM */}
+        <CowForm
+          open={open}
+          onOpenChange={setOpen}
+          cow={selectedCow}
+          length={cows.length}
+        />
+
+        {/* TABLE */}
+        <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden mt-6">
           <table className="w-full">
             <thead className="bg-gray-700 border-b border-gray-600">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">ID</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Image</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Cow Name</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">
+                  Image
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">
+                  Name
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">
+                  Action
+                </th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-gray-700">
               {cows.map((cow) => (
-                <tr key={cow.id} className="hover:bg-gray-700 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-300">{cow.id}</td>
+                <tr key={cow._id} className="hover:bg-gray-700">
+
+                  {/* IMAGE */}
                   <td className="px-6 py-4">
-                    <img 
-                      src={cow.image} 
-                      alt={cow.name}
-                      className="w-16 h-16 rounded-lg object-cover"
+                    <img
+                      src={`${API_URL}${cow.image}`}
+                      className="w-16 h-16 object-cover rounded-lg"
                     />
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-100">{cow.name}</td>
+
+                  {/* NAME */}
+                  <td className="px-6 py-4 text-white font-medium">
+                    {cow.title}
+                  </td>
+
+                  {/* ACTIONS */}
+                  <td className="px-6 py-4 space-x-3">
+
+                    <button
+                      className="bg-blue-600 px-3 py-1 rounded text-white cursor-pointer"
+                      onClick={() => {
+                        setSelectedCow(cow);
+                        setOpen(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="bg-red-600 px-3 py-1 rounded text-white cursor-pointer"
+                      onClick={() => handleDelete(cow._id)}
+                    >
+                      Delete
+                    </button>
+
+                  </td>
+
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       </div>
     </div>
   );
-};
-
-export default ProjectManagement;
+}

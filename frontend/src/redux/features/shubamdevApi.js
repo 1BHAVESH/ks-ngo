@@ -8,7 +8,7 @@ export const shubhamDevApi = createApi({
     baseUrl: `${API_URL}/api`,
     credentials: "include",
   }),
-  tagTypes: ["Project", "Career", "Faqs"],
+  tagTypes: ["CowImage", "Career", "Faqs"],
   endpoints: (builder) => ({
     enquirySend: builder.mutation({
       query: (credentials) => ({
@@ -18,9 +18,9 @@ export const shubhamDevApi = createApi({
       }),
     }),
 
-    getProjects: builder.query({
-      query: () => "/projects",
-      providesTags: ["Project"],
+    getCows: builder.query({
+      query: () => "/cow-image/all",
+      providesTags: ["CowImage"],
     }),
 
     getProjectBySlug: builder.query({
@@ -70,7 +70,7 @@ export const shubhamDevApi = createApi({
 
 export const {
   useEnquirySendMutation,
-  useGetProjectsQuery,
+  useGetCowsQuery,
   useGetProjectBySlugQuery,
   useGetProjectByIdQuery,
 
