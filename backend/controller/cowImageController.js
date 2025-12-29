@@ -139,3 +139,41 @@ export const deleteCow = async (req, res) => {
     });
   }
 };
+
+
+
+export const toggleCowStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ cow find karo
+    const cow = await Gallery.findById(id);
+
+    if (!cow) {
+      return res.status(404).json({
+        success: false,
+        message: "Cow not found",
+      });
+    }
+
+    // 2️⃣ toggle value
+    cow.isActive = !cow.isActive;
+
+    // 3️⃣ save
+    await cow.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cow status updated",
+      isActive: cow.isActive,
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};

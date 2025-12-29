@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Image, FolderKanban, LogOut, Menu, X, HomeIcon, Briefcase, Newspaper, Settings, MessageCircle, ImageIcon } from "lucide-react";
+import { LayoutDashboard, Image, FolderKanban, LogOut, Menu, X, HomeIcon, Briefcase, Newspaper, Settings, MessageCircle, ImageIcon, Banknote } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +15,11 @@ const navItems = [
     icon: Image,
   },
   {
+    name: "Home-Page",
+    path: "/admin/home-page",
+    icon: HomeIcon
+  },
+  {
     name: "Cow-Image",
     path: "/admin/cow-image",
     icon: ImageIcon
@@ -24,7 +29,11 @@ const navItems = [
     path: "/admin/donations",
     icon: FolderKanban,
   },
-  
+  {
+    name: "Bank",
+    path: "/admin/bank",
+    icon: Banknote
+  },
   {
     name: "genral-setting",
     path: "/admin/genral-settings",

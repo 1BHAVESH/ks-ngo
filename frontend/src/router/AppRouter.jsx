@@ -43,6 +43,7 @@ import Enquiry from "@/pages/admin/Enqiry";
 import DonatePage from "@/pages/Donate";
 import AdminDonation from "@/pages/admin/AdminDonation";
 import CowImageManagment from "@/pages/admin/ProjectManagement";
+import BankForm from "@/pages/admin/AdminBank";
 
 export default function AppRoutes() {
   return (
@@ -78,8 +79,9 @@ export default function AppRoutes() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="banners" element={<BannerManagement />} />
           <Route path="donations" element={<AdminDonation />} />
-          {/* <Route path="home-page" element={<HomePage />} /> */}
+          <Route path="home-page" element={<HomePage />} />
           <Route path="cow-image" element={<CowImageManagment />} />
+          <Route path="bank" element={<BankForm />} />
           <Route path="career" element={<CarrerAdmin />} />
           <Route path="faq" element={<AdminFaq />} />
           <Route path="privacy-policy" element={<PolicyEditor />} />

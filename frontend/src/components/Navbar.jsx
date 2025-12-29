@@ -4,8 +4,13 @@ import { useState } from "react";
 import imgLogo from "../../public/3.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebook, faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { useGetGeneralSettingQueryQuery } from "@/redux/features/adminApi";
+
+const API_URL=import.meta.env.VITE_API_URL ||" http://localhost:3001/"
+
 
 export default function Navbar() {
+  const { data, isLoading } = useGetGeneralSettingQueryQuery();
   const [isOpen, setIsOpen] = useState(false);
 
   const links = [
@@ -16,58 +21,77 @@ export default function Navbar() {
     { path: "/gallery", label: "Gallery" },
   ];
 
+  if (isLoading) return <h1>wait...</h1>;
+
+  console.log(data);
+
+ 
+
   return (
     <>
       {/* 🔹 TOP STRIP */}
       <div className="bg-[#0b2e13] text-[#f3f7ec] text-xs flex justify-between items-center px-3 sm:px-6 md:px-10 lg:px-20 xl:px-[145px] h-12 sm:h-14 sticky top-0 z-50">
-
         {/* MOBILE CONTACT */}
         <div className="flex md:hidden flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 text-[9px] sm:text-xs py-1">
           <Link
-            to="tel:+919696969696"
+            to={`tel:+91${data?.data?.phone}`}
             className="flex items-center gap-1 hover:text-[#d8f3a0] transition-colors whitespace-nowrap"
           >
             <Phone size={10} />
-            <span>+91 9696969696</span>
+            <span>+91 {data?.data?.phone}</span>
           </Link>
 
           <Link
-            to="mailto:info@ngo.org"
+            to={`mailto:${data?.data?.email}`}
             className="flex items-center gap-1 hover:text-[#d8f3a0] transition-colors whitespace-nowrap"
           >
             <Mail size={10} />
-            <span>info@ngo.org</span>
+            <span>{data?.data?.email}</span>
           </Link>
         </div>
 
         {/* DESKTOP CONTACT */}
         <div className="hidden md:flex items-center gap-4 lg:gap-6 text-xs lg:text-sm">
           <Link
-            to="tel:+919696969696"
+            to={`tel:+91${data?.data?.phone}`}
             className="flex items-center gap-1.5 hover:text-[#d8f3a0] transition-colors"
           >
             <Phone size={14} />
-            <span className="hidden lg:inline">+91 9696969696</span>
-            <span className="inline lg:hidden">+91 969...</span>
+            <span className="hidden lg:inline">+91 {data?.data?.phone}</span>
+            {/* <span className="inline lg:hidden">+91 969...</span> */}
           </Link>
 
           <Link
-            to="mailto:info@ngo.org"
+            to={`mailto:${data?.data?.email}`}
             className="flex items-center gap-1.5 hover:text-[#d8f3a0] transition-colors"
           >
             <Mail size={14} />
-            <span>info@ngo.org</span>
+            <span>{data?.data?.email}</span>
           </Link>
         </div>
 
         {/* SOCIAL */}
         <div className="flex items-center gap-3">
-          <Link className="hover:text-[#d8f3a0] transition-colors">
-            <FontAwesomeIcon icon={faFacebook} className="text-base sm:text-lg" />
+          <Link
+           to={data?.data?.facebookUrl}
+           target="_blank"
+           rel="noopener noreferrer"
+           className="hover:text-[#d8f3a0] transition-colors">
+            <FontAwesomeIcon
+              icon={faFacebook}
+              className="text-base sm:text-lg"
+            />
           </Link>
 
-          <Link className="hover:text-[#d8f3a0] transition-colors">
-            <FontAwesomeIcon icon={faInstagram} className="text-base sm:text-lg" />
+          <Link
+            to={data?.data?.instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#d8f3a0] transition-colors">
+            <FontAwesomeIcon
+              icon={faInstagram}
+              className="text-base sm:text-lg"
+            />
           </Link>
         </div>
       </div>
@@ -76,11 +100,10 @@ export default function Navbar() {
       <nav className="bg-[#f8f1e3] border-b border-sage sticky top-12 sm:top-14 z-40">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between">
-
             {/* LOGO */}
             <Link to="/" className="flex items-center gap-2">
               <img
-                src={imgLogo}
+                src={`${API_URL}/${data.data.logo}`}
                 alt="KSNGO Logo"
                 className="h-20 object-contain rounded-md"
               />

@@ -23,56 +23,32 @@ const HomePage = () => {
     formState: { errors },
   } = useForm();
 
-  const [aboutData, setAboutData] = useState({
-    title: "",
-    description: "",
-    image: "",
-  });
-
   const [statsData, setStatsData] = useState({
-    awards: 0,
-    projects: 0,
-    clients: 0,
-    team: 0,
+    Cows_Rescued: 0,
+     Active_Volunteers: 0,
+    Years_of_Service: 0,
+    Successful_Adoptions: 0,
   });
 
   const [testimonials, setTestimonials] = useState([]);
-  const [imagePreview, setImagePreview] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-
-  const watchImage = watch("image");
   const watchPhoto = watch("photo");
 
-  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
-  /* ---------------- LOAD DATA ---------------- */
   useEffect(() => {
     if (data) {
-      setAboutData(data.about || {});
       setStatsData(data.stats || {});
       setTestimonials(data.testimonials || []);
     }
   }, [data]);
-
-  /* ---------------- IMAGE PREVIEW ---------------- */
-  useEffect(() => {
-    if (watchImage?.[0] instanceof File) {
-      const url = URL.createObjectURL(watchImage[0]);
-      setImagePreview(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setImagePreview(null);
-    }
-  }, [watchImage]);
 
   useEffect(() => {
     if (watchPhoto?.[0] instanceof File) {
       const url = URL.createObjectURL(watchPhoto[0]);
       setPhotoPreview(url);
       return () => URL.revokeObjectURL(url);
-    } else {
-      setPhotoPreview(null);
-    }
+    } else setPhotoPreview(null);
   }, [watchPhoto]);
 
   const fileToBase64 = (file) =>
@@ -83,19 +59,11 @@ const HomePage = () => {
       reader.readAsDataURL(file);
     });
 
-  /* ---------------- MODAL OPEN ---------------- */
   const handleOpenModal = (section, testimonial = null) => {
     setOpenSection(section);
-    setImagePreview(null);
     setPhotoPreview(null);
 
-    if (section === "about") {
-      reset(aboutData);
-    }
-
-    if (section === "stats") {
-      reset(statsData);
-    }
+    if (section === "stats") reset(statsData);
 
     if (section === "testimonials") {
       if (testimonial) {
@@ -109,511 +77,436 @@ const HomePage = () => {
     }
   };
 
-  /* ---------------- SUBMIT ---------------- */
   const onSubmit = async (formData) => {
-    let updatedAbout = aboutData;
-    let updatedStats = statsData;
-    let updatedTestimonials = testimonials;
+    try {
+      let updatedStats = statsData;
+      let updatedTestimonials = testimonials;
 
-    if (openSection === "about") {
-      updatedAbout = {
-        ...aboutData,
-        title: formData.title,
-        description: formData.description,
-      };
-
-      if (formData.image?.[0]) {
-        updatedAbout.image = await fileToBase64(formData.image[0]);
+      if (openSection === "stats") {
+        updatedStats = {
+          Cows_Rescued: +formData.Cows_Rescued,
+           Active_Volunteers: +formData.Active_Volunteers,
+         Years_of_Service: +formData.Years_of_Service,
+          Successful_Adoptions: +formData.Successful_Adoptions,
+        };
+        setStatsData(updatedStats);
       }
 
-      setAboutData(updatedAbout);
-    }
+      if (openSection === "testimonials") {
+        const photo =
+          formData.photo?.[0] && (await fileToBase64(formData.photo[0]));
 
-    if (openSection === "stats") {
-      updatedStats = {
-        awards: +formData.awards,
-        projects: +formData.projects,
-        clients: +formData.clients,
-        team: +formData.team,
-      };
-      setStatsData(updatedStats);
-    }
+        if (editingTestimonialId) {
+          updatedTestimonials = testimonials.map((t) =>
+            t.id === editingTestimonialId
+              ? { ...t, ...formData, photo: photo || t.photo }
+              : t
+          );
+        } else {
+          updatedTestimonials = [
+            ...testimonials,
+            { id: Date.now(), ...formData, photo },
+          ];
+        }
 
-    if (openSection === "testimonials") {
-      const photo =
-        formData.photo?.[0] && (await fileToBase64(formData.photo[0]));
-
-      if (editingTestimonialId) {
-        updatedTestimonials = testimonials.map((t) =>
-          t.id === editingTestimonialId
-            ? { ...t, ...formData, photo: photo || t.photo }
-            : t
-        );
-      } else {
-        updatedTestimonials = [
-          ...testimonials,
-          { id: Date.now(), ...formData, photo },
-        ];
+        setTestimonials(updatedTestimonials);
       }
 
-      setTestimonials(updatedTestimonials);
+      console.log(formData)
+
+      await updateHomePage({
+        stats: updatedStats,
+        testimonials: updatedTestimonials,
+      }).unwrap();
+
+      refetch();
+      setOpenSection(null);
+      reset();
+    } catch (error) {
+      console.error("Failed to update:", error);
     }
-
-    await updateHomePage({
-      about: updatedAbout,
-      stats: updatedStats,
-      testimonials: updatedTestimonials,
-    }).unwrap();
-
-    refetch();
-    setOpenSection(null);
-    reset();
   };
 
   const handleDeleteTestimonial = async (id) => {
-    const updatedTestimonials = testimonials.filter((t) => t.id !== id);
-    setTestimonials(updatedTestimonials);
+    if (!window.confirm("Are you sure you want to delete this testimonial?"))
+      return;
 
-    await updateHomePage({
-      about: aboutData,
-      stats: statsData,
-      testimonials: updatedTestimonials,
-    }).unwrap();
+    try {
+      const updatedTestimonials = testimonials.filter((t) => t.id !== id);
+      setTestimonials(updatedTestimonials);
 
-    refetch();
+      await updateHomePage({
+        stats: statsData,
+        testimonials: updatedTestimonials,
+      }).unwrap();
+
+      refetch();
+    } catch (error) {
+      console.error("Failed to delete:", error);
+    }
   };
 
   if (isLoading) {
-    return <div className="text-white text-center p-10">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-300 text-lg">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4 md:p-6 space-y-6 md:space-y-10">
-      {/* ---------------- ABOUT ---------------- */}
-      <SectionHeader
-        title="About Section"
-        onClick={() => handleOpenModal("about")}
-      />
+    <div className="min-h-screen bg-gray-900 p-3 sm:p-4 md:p-6 space-y-6 sm:space-y-8">
+      {/* PAGE HEADER */}
 
-      {/* Mobile Card */}
-      <MobileCard>
-        <p className="font-bold text-base mb-2">{aboutData.title}</p>
-        <p className="text-sm text-gray-300 break-words">
-          {aboutData.description}
-        </p>
-        {aboutData.image && (
-          <img
-            src={`${API_URL}${aboutData.image}`}
-            className="mt-3 w-full h-40 object-cover rounded"
-            alt="About"
-          />
-        )}
-      </MobileCard>
+      {/* --------- STATS SECTION --------- */}
+      <div className="bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-700">
+        <SectionHeader
+          title="📊 Statistics Section"
+          onClick={() => handleOpenModal("stats")}
+        />
 
-      {/* Desktop Table */}
-      <DesktopTable headers={["Title", "Description", "Image"]}>
-        <tr className="border-b border-gray-700">
-          <td className="p-3 max-w-xs break-words">{aboutData.title}</td>
-          <td className="p-3 max-w-md break-words">{aboutData.description}</td>
-          <td className="p-3">
-            {aboutData.image && (
-              <img
-                src={`${API_URL}${aboutData.image}`}
-                className="w-24 h-14 object-cover rounded"
-                alt="About"
-              />
-            )}
-          </td>
-        </tr>
-      </DesktopTable>
-
-      {/* ---------------- STATS ---------------- */}
-      <SectionHeader
-        title="Stats Section"
-        onClick={() => handleOpenModal("stats")}
-      />
-
-      <div className="grid grid-cols-2 gap-3 md:hidden">
-        {Object.entries(statsData).map(([k, v]) => (
-          <div
-            key={k}
-            className="bg-gray-800 p-4 rounded text-center text-white"
-          >
-            <p className="text-xs uppercase text-gray-400 mb-1">{k}</p>
-            <p className="text-2xl font-bold">{v}</p>
-          </div>
-        ))}
-      </div>
-
-      <DesktopTable headers={["Awards", "Projects", "Clients", "Team"]}>
-        <tr className="border-b border-gray-700">
-          {Object.values(statsData).map((v, i) => (
-            <td key={i} className="text-center p-3 text-lg font-semibold">
-              {v}
-            </td>
-          ))}
-        </tr>
-      </DesktopTable>
-
-      {/* ---------------- TESTIMONIALS ---------------- */}
-      <SectionHeader
-        title="Testimonials"
-        onClick={() => handleOpenModal("testimonials")}
-        btnText="Add New"
-      />
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
-        {testimonials.map((t) => (
-          <MobileCard key={t.id}>
-            <div className="flex gap-3 items-start mb-3">
-              <img
-                src={t.photo}
-                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                alt={t.name}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-base truncate">{t.name}</p>
-                <p className="text-xs text-gray-400 truncate">{t.position}</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-300 break-words mb-3">
-              {t.message}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleOpenModal("testimonials", t)}
-                className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700 cursor-pointer"
+        {/* Desktop Table */}
+        <DesktopTable
+          headers={[
+            "🐄 Cows Rescued",
+            "🙋 Active Volunteers",
+            "📅 Years of Service",
+            "🏠 Successful Adoptions",
+          ]}
+        >
+          <tr className="hover:bg-gray-750 transition">
+            {Object.values(statsData).map((v, i) => (
+              <td
+                key={i}
+                className="border border-gray-600 p-3 sm:p-4 text-center text-lg sm:text-xl font-bold text-blue-400"
               >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteTestimonial(t.id)}
-                className="flex-1 bg-red-600 text-white py-2 px-3 rounded text-sm hover:bg-red-700 cursor-pointer"
-              >
-                Delete
-              </button>
-            </div>
-          </MobileCard>
-        ))}
-      </div>
-
-      {/* Desktop Table */}
-      <DesktopTable
-        headers={["Photo", "Name", "Position", "Message", "Actions"]}
-      >
-        {testimonials.map((t) => (
-          <tr key={t.id} className="border-b border-gray-700">
-            <td className="p-3">
-              <img
-                src={t.photo}
-                className="w-12 h-12 rounded-full object-cover"
-                alt={t.name}
-              />
-            </td>
-            <td className="p-3 max-w-xs truncate">{t.name}</td>
-            <td className="p-3 max-w-xs truncate">{t.position}</td>
-            <td className="p-3 max-w-md break-words">{t.message}</td>
-            <td className="p-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleOpenModal("testimonials", t)}
-                  className="bg-blue-600 text-white py-1 px-3 rounded text-sm hover:bg-blue-700 cursor-pointer"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteTestimonial(t.id)}
-                  className="bg-red-600 text-white py-1 px-3 rounded text-sm hover:bg-red-700 cursor-pointer"
-                >
-                  Delete
-                </button>
-              </div>
-            </td>
+                {v}
+              </td>
+            ))}
           </tr>
-        ))}
-      </DesktopTable>
+        </DesktopTable>
 
-      {/* ---------------- MODAL ---------------- */}
+        {/* Mobile Cards */}
+        <div className="md:hidden grid grid-cols-2 gap-3">
+          {[
+            {
+              label: "Cows Rescued",
+              value: statsData.Cows_Rescued,
+              icon: "🐄",
+              color: "yellow",
+            },
+            {
+              label: "Active Volunteers",
+              value: statsData.Active_Volunteers,
+              icon: "🙋",
+              color: "blue",
+            },
+            {
+              label: "Years of Service",
+              value: statsData.Years_of_Service,
+              icon: "📅",
+              color: "green",
+            },
+            {
+              label: "Successful Adoptions",
+              value: statsData.Successful_Adoptions,
+              icon: "🏠",
+              color: "purple",
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className={`bg-gray-900 rounded-lg p-4 border-2 border-${stat.color}-500/30 hover:border-${stat.color}-500 transition`}
+            >
+              <div className="text-2xl mb-2">{stat.icon}</div>
+              <div className={`text-2xl font-bold text-${stat.color}-400 mb-1`}>
+                {stat.value}
+              </div>
+              <div className="text-gray-400 text-sm">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* --------- TESTIMONIALS SECTION --------- */}
+      <div className="bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-700">
+        <SectionHeader
+          title="💬 Testimonials"
+          onClick={() => handleOpenModal("testimonials")}
+          btnText="➕ Add New"
+        />
+
+        {testimonials.length === 0 ? (
+          <div className="text-center py-12 bg-gray-900 rounded-lg">
+            <div className="text-5xl mb-4">💬</div>
+            <p className="text-gray-400 text-lg">No testimonials yet</p>
+            <button
+              onClick={() => handleOpenModal("testimonials")}
+              className="mt-4 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+            >
+              Add First Testimonial
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <DesktopTable
+              headers={["Photo", "Name", "Position", "Message", "Actions"]}
+            >
+              {testimonials.map((t) => (
+                <tr key={t.id} className="hover:bg-gray-750 transition">
+                  <td className="border border-gray-600 p-3">
+                    <img
+                      src={t.photo}
+                      alt={t.name}
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-blue-500 mx-auto"
+                    />
+                  </td>
+                  <td className="border border-gray-600 p-3 font-semibold text-gray-200">
+                    {t.name}
+                  </td>
+                  <td className="border border-gray-600 p-3 text-gray-400">
+                    {t.position}
+                  </td>
+                  <td className="border border-gray-600 p-3 text-gray-300 max-w-md">
+                    <div className="line-clamp-2">{t.message}</div>
+                  </td>
+                  <td className="border border-gray-600 p-3">
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => handleOpenModal("testimonials", t)}
+                        className="bg-yellow-600 cursor-pointer hover:bg-yellow-700 text-white px-3 py-1.5 rounded text-sm transition"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTestimonial(t.id)}
+                        className="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm transition"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </DesktopTable>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {testimonials.map((t) => (
+                <div
+                  key={t.id}
+                  className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition shadow-lg"
+                >
+                  <div className="flex items-start gap-4 mb-3">
+                    <img
+                      src={t.photo}
+                      alt={t.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-white truncate">
+                        {t.name}
+                      </h3>
+                      <p className="text-sm text-gray-400 truncate">
+                        {t.position}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-300 text-sm mb-4 line-clamp-3 bg-gray-800 p-3 rounded">
+                    "{t.message}"
+                  </p>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenModal("testimonials", t)}
+                      className="flex-1 cursor-pointer bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm transition"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTestimonial(t.id)}
+                      className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* --------- MODAL --------- */}
       {openSection && (
         <Modal onClose={() => setOpenSection(null)}>
-          <h3 className="text-xl font-bold mb-4 text-gray-800">
-            {openSection === "about" && "Edit About Section"}
-            {openSection === "stats" && "Edit Stats"}
-            {openSection === "testimonials" &&
-              (editingTestimonialId ? "Edit Testimonial" : "Add Testimonial")}
-          </h3>
+          {openSection === "stats" && (
+            <div className="space-y-4">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
+                📊 Edit Statistics
+              </h3>
 
-          <div className="space-y-4">
-            {/* ABOUT FORM */}
-            {openSection === "about" && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    {...register("title", { required: "Title is required" })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {errors.title && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.title.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description 
-                  </label>
-                  <textarea
-                    {...register("description", {
-                      required: "Description is required",
-                    })}
-                    className="w-full border border-gray-300 p-2 rounded h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {errors.description && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.description.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    {...register("image", {
-                      validate: (files) => {
-                        if (!files || !files.length) return true;
-                        return (
-                          files[0].size <= MAX_IMAGE_SIZE ||
-                          "Image size must be less than 5MB"
-                        );
-                      },
-                    })}
-                    className="w-full border border-gray-300 p-2 rounded"
-                  />
-
-                  {errors.image && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.image.message}
-                    </p>
-                  )}
-
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      className="mt-2 w-full h-32 object-cover rounded"
-                      alt="Preview"
-                    />
-                  )}
-                  {!imagePreview && aboutData.image && (
-                    <img
-                      src={`${API_URL}${aboutData.image}`}
-                      className="mt-2 w-full h-32 object-cover rounded"
-                      alt="Current"
-                    />
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* STATS FORM */}
-            {openSection === "stats" && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Awards
+              {[
+                { name: "Cows_Rescued", label: "🐄 Cows Rescued" },
+                { name: "Active_Volunteers", label: "🙋 Active Volunteers" },
+                { name: "Years_of_Service", label: "📅 Years of Service" },
+                { name: "Successful_Adoptions", label: "🏠 Successful Adoptions" },
+              ].map((field) => (
+                <div key={field.name}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {field.label}
                   </label>
                   <input
                     type="number"
-                    {...register("awards", { required: true })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    {...register(field.name, { required: true, min: 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    placeholder={`Enter number of ${field.label.toLowerCase()}`}
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Projects
-                  </label>
-                  <input
-                    type="number"
-                    {...register("projects", { required: true })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Clients
-                  </label>
-                  <input
-                    type="number"
-                    {...register("clients", { required: true })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Team
-                  </label>
-                  <input
-                    type="number"
-                    {...register("team", { required: true })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* TESTIMONIALS FORM */}
-            {openSection === "testimonials" && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    {...register("name", { required: "Name is required" })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {errors.name && (
+                  {errors[field.name] && (
                     <p className="text-red-500 text-xs mt-1">
-                      {errors.name.message}
+                      This field is required
                     </p>
                   )}
                 </div>
+              ))}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Position
-                  </label>
-                  <input
-                    type="text"
-                    {...register("position", {
-                      required: "Position is required",
-                    })}
-                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {errors.position && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.position.message}
-                    </p>
-                  )}
-                </div>
+              <button
+                onClick={handleSubmit(onSubmit)}
+                disabled={updateLoading}
+                className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updateLoading ? "Saving..." : "💾 Save Statistics"}
+              </button>
+            </div>
+          )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    {...register("message", {
-                      required: "Message is required",
-                    })}
-                    className="w-full border border-gray-300 p-2 rounded h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {errors.message && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.message.message}
-                    </p>
-                  )}
-                </div>
+          {openSection === "testimonials" && (
+            <div className="space-y-4">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
+                {editingTestimonialId ? "✏️ Edit" : "➕ Add"} Testimonial
+              </h3>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Photo
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    {...register("photo", {
-                      validate: (files) => {
-                        if (!files || !files.length) return true;
-                        return (
-                          files[0].size <= MAX_IMAGE_SIZE ||
-                          "Photo size must be less than 5MB"
-                        );
-                      },
-                    })}
-                    className="w-full border border-gray-300 p-2 rounded"
-                  />
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  👤 Name
+                </label>
+                <input
+                  type="text"
+                  {...register("name", { required: true })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  placeholder="Enter name"
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-xs mt-1">Name is required</p>
+                )}
+              </div>
 
-                  {errors.photo && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.photo.message}
-                    </p>
-                  )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  💼 Position
+                </label>
+                <input
+                  type="text"
+                  {...register("position", { required: true })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  placeholder="Enter position/role"
+                />
+                {errors.position && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Position is required
+                  </p>
+                )}
+              </div>
 
-                  {photoPreview && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  💬 Message
+                </label>
+                <textarea
+                  {...register("message", { required: true })}
+                  rows="4"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                  placeholder="Enter testimonial message"
+                />
+                {errors.message && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Message is required
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  📷 Photo
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  {...register("photo")}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                />
+                {photoPreview && (
+                  <div className="mt-3 flex justify-center">
                     <img
                       src={photoPreview}
-                      className="mt-2 w-20 h-20 rounded-full object-cover"
                       alt="Preview"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-lg"
                     />
-                  )}
-                </div>
-              </>
-            )}
+                  </div>
+                )}
+              </div>
 
-            <button
-              onClick={handleSubmit(onSubmit)}
-              disabled={updateLoading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-2 rounded font-medium cursor-pointer disabled:cursor-not-allowed"
-            >
-              {updateLoading ? "Saving..." : "Save Changes"}
-            </button>
-
-            <button
-              onClick={() => setOpenSection(null)}
-              disabled={updateLoading}
-              className="w-full bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white py-2 rounded font-medium cursor-pointer disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-          </div>
+              <button
+                onClick={handleSubmit(onSubmit)}
+                disabled={updateLoading}
+                className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updateLoading
+                  ? "Saving..."
+                  : editingTestimonialId
+                  ? "💾 Update Testimonial"
+                  : "➕ Add Testimonial"}
+              </button>
+            </div>
+          )}
         </Modal>
       )}
     </div>
   );
 };
 
-/* ---------------- REUSABLE UI ---------------- */
+export default HomePage;
 
-const SectionHeader = ({ title, onClick, btnText = "Update" }) => (
-  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-    <h2 className="text-xl md:text-2xl font-bold text-white">{title}</h2>
+// ========== COMPONENTS ==========
+
+const SectionHeader = ({ title, onClick, btnText = "✏️ Update" }) => (
+  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
+    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
+      {title}
+    </h2>
     <button
       onClick={onClick}
-      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-medium w-full sm:w-auto cursor-pointer"
+      className="w-full cursor-pointer sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
     >
       {btnText}
     </button>
   </div>
 );
 
-const MobileCard = ({ children }) => (
-  <div className="bg-gray-800 p-4 rounded-lg text-white md:hidden shadow-lg">
-    {children}
-  </div>
-);
-
 const DesktopTable = ({ headers, children }) => (
   <div className="hidden md:block overflow-x-auto rounded-lg shadow-lg">
-    <table className="w-full border-collapse bg-gray-800 text-white">
+    <table className="w-full border-collapse bg-gray-900 text-white">
       <thead className="bg-gray-700">
         <tr>
           {headers.map((h) => (
             <th
               key={h}
-              className="border border-gray-600 p-3 text-left font-semibold"
+              className="border border-gray-600 p-3 sm:p-4 text-left font-semibold text-sm sm:text-base"
             >
               {h}
             </th>
@@ -626,11 +519,16 @@ const DesktopTable = ({ headers, children }) => (
 );
 
 const Modal = ({ children, onClose }) => (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
-    <div className="bg-white w-full max-w-lg p-6 rounded-lg shadow-xl my-8 max-h-[90vh] overflow-y-auto">
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+    <div className="bg-white w-full max-w-lg p-4 sm:p-6 rounded-xl shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
       {children}
+
+      <button
+        onClick={onClose}
+        className="mt-6 w-full cursor-pointer bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-semibold transition"
+      >
+        ✖️ Close
+      </button>
     </div>
   </div>
 );
-
-export default HomePage;

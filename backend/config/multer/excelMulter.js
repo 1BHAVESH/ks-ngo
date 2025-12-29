@@ -5,15 +5,33 @@ import path from "path";
 // folder path
 const excelPath = path.join(process.cwd(), "uploads", "excel");
 
+const donateExcelPath = path.join(process.cwd(), "uploads", "donate-excel");
+
 // ensure folder exists
 if (!fs.existsSync(excelPath)) {
   fs.mkdirSync(excelPath, { recursive: true });
+}
+
+// ensure folder exists
+if (!fs.existsSync(donateExcelPath)) {
+  fs.mkdirSync(donateExcelPath, { recursive: true });
 }
 
 // storage config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, excelPath);
+  },
+  filename: function (req, file, cb) {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  },
+});
+
+// storage config
+const storageForDonate = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, donateExcelPath);
   },
   filename: function (req, file, cb) {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -32,8 +50,14 @@ const fileFilter = (req, file, cb) => {
   else cb(new Error("Only Excel files allowed (.xls/.xlsx)"), false);
 };
 
- export const upload = multer({
+ export const uploadExcel = multer({
   storage,
   fileFilter,
   limits: { fileSize: 20 * 1024 * 1024 } // 20MB
+});
+
+ export const uploadExcelForDonains = multer({
+  storage: storageForDonate,
+  fileFilter,
+ 
 });

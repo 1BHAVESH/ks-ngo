@@ -14,10 +14,10 @@ const homePageSchema = new mongoose.Schema({
     image: String,
   },
   stats: {
-    awards: Number,
-    projects: Number,
-    clients: Number,
-    team: Number,
+    Cows_Rescued: Number,
+     Active_Volunteers: Number,
+    Years_of_Service: Number,
+    Successful_Adoptions: Number,
   },
   testimonials: [testimonialSchema]  // 👈 Multiple testimonials stored here
 });

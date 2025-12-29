@@ -9,14 +9,18 @@ export default function StatsSection() {
   
     if (isLoading) return <h1 className="text-white">wait...</h1>;
 
+     const stat = data?.stats
+
     const stats = [
-    { number: "500+", label: "Cows Rescued" },
-    { number: "150+", label: "Active Volunteers" },
-    { number: "12+", label: "Years of Service" },
-    { number: "300+", label: "Successful Adoptions" },
+    { number: `${stat.Cows_Rescued}+`, label: "Cows Rescued" },
+    { number: `${stat.Active_Volunteers}+`, label: "Active Volunteers" },
+    { number:`${stat.Years_of_Service}+`, label: "Years of Service" },
+    { number: `${stat.Successful_Adoptions}+`, label: "Successful Adoptions" },
   ]
 
-    //console.log(states)
+   
+
+    // console.log(stat)
   
 
   return (

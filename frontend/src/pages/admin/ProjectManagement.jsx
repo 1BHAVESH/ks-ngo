@@ -1,14 +1,19 @@
 import React, { useState } from "react";
 import CowForm from "@/components/admin/ProjectForm";
-import { useDeleteCowMutation, useGetCowsQuery,  } from "@/redux/features/adminApi";
+import {
+  useDeleteCowMutation,
+  useGetCowsQuery,
+  useToggleCowMutation,
+} from "@/redux/features/adminApi";
+
+import { Switch } from "@/components/ui/switch";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/";
 
 export default function ProjectManagement() {
-
   const { data, isLoading, refetch } = useGetCowsQuery();
-
   const [deleteCow] = useDeleteCowMutation();
+  const [updateCowStatus] = useToggleCowMutation();
 
   const [open, setOpen] = useState(false);
   const [selectedCow, setSelectedCow] = useState(null);
@@ -22,9 +27,8 @@ export default function ProjectManagement() {
 
     try {
       await deleteCow(id).unwrap();
-      refetch(); // refresh table
+      refetch();
     } catch (err) {
-      console.log(err);
       alert("Delete failed");
     }
   };
@@ -32,7 +36,6 @@ export default function ProjectManagement() {
   return (
     <div className="min-h-screen bg-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
-
         {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-white">Cow Management</h1>
@@ -68,6 +71,9 @@ export default function ProjectManagement() {
                   Name
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">
+                  Active
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">
                   Action
                 </th>
               </tr>
@@ -75,8 +81,12 @@ export default function ProjectManagement() {
 
             <tbody className="divide-y divide-gray-700">
               {cows.map((cow) => (
-                <tr key={cow._id} className="hover:bg-gray-700">
-
+                <tr
+                  key={cow._id}
+                  className={`hover:bg-gray-700 ${
+                    !cow.isActive ? "opacity-60" : ""
+                  }`}
+                >
                   {/* IMAGE */}
                   <td className="px-6 py-4">
                     <img
@@ -90,9 +100,28 @@ export default function ProjectManagement() {
                     {cow.title}
                   </td>
 
+                  {/* SHADCN SWITCH */}
+                  <td className="px-6 py-4">
+                    <Switch
+                      className="cursor-pointer data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
+                      checked={cow.isActive}
+                      disabled={
+                        cow.isActive &&
+                        cows.filter((c) => c.isActive).length === 1
+                      }
+                      onCheckedChange={async () => {
+                        try {
+                          await updateCowStatus(cow._id).unwrap();
+                          refetch();
+                        } catch (err) {
+                          alert("Failed to update status");
+                        }
+                      }}
+                    />
+                  </td>
+
                   {/* ACTIONS */}
                   <td className="px-6 py-4 space-x-3">
-
                     <button
                       className="bg-blue-600 px-3 py-1 rounded text-white cursor-pointer"
                       onClick={() => {
@@ -109,13 +138,10 @@ export default function ProjectManagement() {
                     >
                       Delete
                     </button>
-
                   </td>
-
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
       </div>

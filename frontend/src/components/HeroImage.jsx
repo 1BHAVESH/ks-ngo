@@ -10,9 +10,14 @@ import "swiper/css/pagination";
 import img1 from "../../public/brown-and-white-indian-gir-cow-in-sanctuary.jpg"
 import img2 from "../../public/peaceful-cow-grazing-in-green-pasture-indian-gaush.jpg"
 import img3 from "../../public/elderly-mixed-breed-cow-in-shelter.jpg"
+import { useGetBannersQuery } from "@/redux/features/adminApi";
+
+const API_URL=import.meta.env.VITE_API_URL ||" http://localhost:3001/"
 
 
 export default function HeroImage() {
+
+  const {data, isLoading} = useGetBannersQuery()
   const slides = [
     {
       img: img1,
@@ -31,6 +36,14 @@ export default function HeroImage() {
     },
   ];
 
+  console.log(data)
+
+
+  if(isLoading) return <h1>please wait..</h1>
+
+  const bannerImages = data?.data?.map((cow) => cow.imageUrl)
+
+  console.log(bannerImages)
   return (
     <section className="relative bg-[#f8f1e3] overflow-hidden">
 
@@ -41,13 +54,13 @@ export default function HeroImage() {
         loop
         className="h-[420px] md:h-[500px]"
       >
-        {slides.map((s, i) => (
+        {bannerImages.map((s, i) => (
           <SwiperSlide key={i}>
             <div className="relative h-full">
               
               {/* BG IMAGE */}
               <img
-                src={s.img}
+                src={`${API_URL}${s}`}
                 className="w-full h-full object-cover"
               />
 

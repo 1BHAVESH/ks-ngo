@@ -121,7 +121,13 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["CowImage"],
     }),
-
+    toggleCow: builder.mutation({
+      query: (id) => ({
+        url: `/cow-image/cow/${id}/toggle`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["CowImage"],
+    }),
     createJob: builder.mutation({
       query: (body) => ({
         url: "/career/create-job",
@@ -269,13 +275,13 @@ export const adminApi = createApi({
     }),
 
     getAllPosts: builder.query({
-  query: (params) => ({
-    url: "/media/get-all-media-posts",
-    method: "GET",
-    params, // 🔥 yahin se query string jayegi
-  }),
-  providesTags: ["Media"],
-}),
+      query: (params) => ({
+        url: "/media/get-all-media-posts",
+        method: "GET",
+        params, // 🔥 yahin se query string jayegi
+      }),
+      providesTags: ["Media"],
+    }),
 
     createMediaPostMutation: builder.mutation({
       query: (formData) => ({
@@ -283,24 +289,24 @@ export const adminApi = createApi({
         method: "POST",
         body: formData,
       }),
-      invalidatesTags: ["Media"]
+      invalidatesTags: ["Media"],
     }),
 
     updateMediaPost: builder.mutation({
-      query: ({id, data}) => ({
+      query: ({ id, data }) => ({
         url: `/media/update-post/${id}`,
         method: "PUT",
-        body: data
+        body: data,
       }),
-      invalidatesTags: ["Media"]
+      invalidatesTags: ["Media"],
     }),
 
-     toggleMediaPostStatus: builder.mutation({
+    toggleMediaPostStatus: builder.mutation({
       query: (id) => ({
         url: `/media/toogle-media-staus/${id}`,
         method: "PATCH",
       }),
-      invalidatesTags: ["Media"]
+      invalidatesTags: ["Media"],
     }),
 
     deleteMediaPost: builder.mutation({
@@ -308,7 +314,7 @@ export const adminApi = createApi({
         url: `/media/delete-post/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Media"]
+      invalidatesTags: ["Media"],
     }),
     excelImportEnquiries: builder.mutation({
       query: (file) => {
@@ -322,26 +328,44 @@ export const adminApi = createApi({
         };
       },
     }),
+    excelImportDonations: builder.mutation({
+      query: (formData) => {
+        // const formData = new FormData();
+        // formData.append("excelFile", file); // 👈 IMPORTANT
+
+        return {
+          url: `/donate/donatte/import-excel`,
+          method: "POST",
+          body: formData,
+        };
+      },
+    }),
+    
     getExcelEnquiries: builder.query({
       query: () => ({
         url: `/excel-enquiry/get-excel-enquiry`,
         method: "GET",
       }),
-     
     }),
 
     sendDonate: builder.mutation({
       query: (data) => ({
         url: "/donate/donate-send",
         method: "POST",
-        body: data
-      })
+        body: data,
+      }),
     }),
-     getDonate: builder.query({
+    getDonate: builder.query({
       query: () => ({
         url: "/donate/get-all-donation",
         method: "GET",
-        
+      }),
+    }),
+    bankInfoCreate: builder.mutation({
+      query: (data) => ({
+        url: "/bank/create-bank-detail",
+        method: "POST",
+        body: data
       })
     }),
     searchEnquiries: builder.query({
@@ -368,6 +392,7 @@ export const {
   useCreateCowImageMutation,
   useUpdateCowImageMutation,
   useDeleteCowMutation,
+  useToggleCowMutation,
   useCreateJobMutation,
   useGetJobQuery,
   useUpdateJobMutation,
@@ -395,5 +420,7 @@ export const {
   useGetExcelEnquiriesQuery,
   useSendDonateMutation,
   useGetDonateQuery,
-  useSearchEnquiriesQuery
+  useSearchEnquiriesQuery,
+  useExcelImportDonationsMutation,
+  useBankInfoCreateMutation
 } = adminApi;

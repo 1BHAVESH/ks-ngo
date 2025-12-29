@@ -17,7 +17,7 @@ export default function GalleryPage() {
 
   console.log(data);
 
-  const cowImages = data?.data || [];
+  const cowImages = (data?.data || []).filter(cow => cow.isActive === true);
 
   console.log(selectedImage);
 
@@ -56,7 +56,7 @@ export default function GalleryPage() {
                     <img
                       src={`${API_URL}${cow.image}`}
                       alt={cow.title}
-                      className="h-full w-full object-cover"
+                      className="md:h-[300px] w-full object-cover"
                     />
                   </div>
 

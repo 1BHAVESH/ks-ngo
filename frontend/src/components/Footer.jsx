@@ -1,7 +1,10 @@
 import React from 'react';
 import { Heart, MapPin, Phone, Mail, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { useGetGeneralSettingQueryQuery } from '@/redux/features/adminApi';
 
 const Footer = () => {
+    const { data, isLoading } = useGetGeneralSettingQueryQuery();
+  
   const Link = ({ to, children, className = "" }) => (
     <a href={to} className={className}>{children}</a>
   );
@@ -87,18 +90,18 @@ const Footer = () => {
                 </div>
                 <span className="text-gray-600 leading-relaxed">123 Gaushala Road, Vrindavan, UP 281121</span>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <Link  to={`tel:+91${data?.data?.phone}`} className="flex items-center gap-3 text-sm">
                 <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-green-100">
                   <Phone className="w-4 h-4 text-green-700" />
                 </div>
-                <span className="text-gray-600">+91 98765 43210</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
+                <span className="text-gray-600">+91 {data?.data?.phone}</span>
+              </Link>
+              <Link  to={`mailto:${data?.data?.email}`} className="flex items-center gap-3 text-sm">
                 <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-green-100">
                   <Mail className="w-4 h-4 text-green-700" />
                 </div>
-                <span className="text-gray-600">contact@ksngo.org</span>
-              </div>
+                <span className="text-gray-600">{data?.data?.email}</span>
+              </Link>
             </div>
 
             {/* Social Media */}

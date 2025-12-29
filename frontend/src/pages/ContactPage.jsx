@@ -9,6 +9,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useEnquirySendMutation } from "@/redux/features/shubamdevApi";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { useGetGeneralSettingQueryQuery } from "@/redux/features/adminApi";
 
 /* ------------------ YUP VALIDATION SCHEMA ------------------ */
 const contactSchema = yup.object({
@@ -38,6 +40,9 @@ const contactSchema = yup.object({
 });
 
 export default function ContactPage() {
+
+    const { data: genralData, isLoading: genralDataLoading } = useGetGeneralSettingQueryQuery();
+  
   const {
     register,
     handleSubmit,
@@ -61,6 +66,8 @@ export default function ContactPage() {
   
     reset();
   };
+
+  if(genralDataLoading) return <h1>wait..</h1>
 
   return (
     <div className="min-h-screen">
@@ -90,13 +97,15 @@ export default function ContactPage() {
               </InfoCard>
 
               <InfoCard icon={Phone} title="Phone">
-                +91 98765 43210 <br />
-                +91 98765 43211
+               <Link to={`tel:+91${genralData?.data?.phone}`}>
+               +91 {genralData?.data?.phone}
+               </Link>
               </InfoCard>
 
               <InfoCard icon={Mail} title="Email">
-                contact@cowsevango.org <br />
-                info@cowsevango.org
+                <Link to={`mailto:${genralData?.data?.email}`}>
+                 <span>{genralData?.data?.email}</span>
+                </Link>
               </InfoCard>
 
               <InfoCard icon={Clock} title="Visiting Hours">
