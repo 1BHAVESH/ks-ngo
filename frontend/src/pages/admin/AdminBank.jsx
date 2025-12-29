@@ -17,7 +17,7 @@ const schema = yup.object().shape({
 });
 
 function BankForm({ onSubmit, initialData = null, onCancel }) {
-  cont [bankInfoCreate] = useBankInfoCreateMutation()
+  const [bankInfoCreate] = useBankInfoCreateMutation()
   const {
     register,
     handleSubmit,
@@ -39,7 +39,7 @@ function BankForm({ onSubmit, initialData = null, onCancel }) {
     if (data.qrCode && data.qrCode.length > 0) {
       data.qrCode = data.qrCode[0];
 
-      console.log(data)
+      const response = await bankInfoCreate(data).unwrap()
     } else {
       data.qrCode = initialData?.qrCode || null;
     }

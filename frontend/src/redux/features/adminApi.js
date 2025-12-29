@@ -361,10 +361,24 @@ export const adminApi = createApi({
         method: "GET",
       }),
     }),
+
+    getBankDetail: builder.query({
+      query: () => ({
+        url: "/bank/",
+        method: "GET",
+      }),
+    }),
     bankInfoCreate: builder.mutation({
       query: (data) => ({
         url: "/bank/create-bank-detail",
         method: "POST",
+        body: data
+      })
+    }),
+    updateBankInfoCreate: builder.mutation({
+      query: (data, id) => ({
+        url: `/bank/:${id}`,
+        method: "PUT",
         body: data
       })
     }),
@@ -422,5 +436,6 @@ export const {
   useGetDonateQuery,
   useSearchEnquiriesQuery,
   useExcelImportDonationsMutation,
-  useBankInfoCreateMutation
+  useBankInfoCreateMutation,
+  useGetBankDetailQuery
 } = adminApi;
