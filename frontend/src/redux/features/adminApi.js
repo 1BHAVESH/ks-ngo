@@ -340,7 +340,7 @@ export const adminApi = createApi({
         };
       },
     }),
-    
+
     getExcelEnquiries: builder.query({
       query: () => ({
         url: `/excel-enquiry/get-excel-enquiry`,
@@ -372,15 +372,24 @@ export const adminApi = createApi({
       query: (data) => ({
         url: "/bank/create-bank-detail",
         method: "POST",
-        body: data
-      })
+        body: data,
+      }),
     }),
-    updateBankInfoCreate: builder.mutation({
-      query: (data, id) => ({
-        url: `/bank/:${id}`,
+    updateBankInfo: builder.mutation({
+      query: ({ id, body }) => {
+
+       for (let pair of body.entries()) {
+  console.log(pair[0], pair[1]);
+}
+
+        return{
+          
+        url: `/bank/edit-bank-info/${id}`,
         method: "PUT",
-        body: data
-      })
+        body,
+      
+        }
+      },
     }),
     searchEnquiries: builder.query({
       query: (q) => ({
@@ -437,5 +446,6 @@ export const {
   useSearchEnquiriesQuery,
   useExcelImportDonationsMutation,
   useBankInfoCreateMutation,
-  useGetBankDetailQuery
+  useGetBankDetailQuery,
+  useUpdateBankInfoMutation,
 } = adminApi;

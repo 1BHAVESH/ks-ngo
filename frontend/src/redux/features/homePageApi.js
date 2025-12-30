@@ -53,6 +53,15 @@ export const homePageApi = createApi({
       invalidatesTags: ["HomePage"],
     }),
 
+    updateTestimonial: builder.mutation({
+      query: ({id, testimonialData}) => ({
+        url: `/homepage/testimonial/${id}`,
+        method: "PUT",
+        body: testimonialData,
+      }),
+      invalidatesTags: ["HomePage"],
+    }),
+
     deleteTestimonial: builder.mutation({
       query: (id) => ({
         url: `/homepage/testimonial/${id}`,
@@ -75,6 +84,7 @@ export const {
   useGetHomePageQuery,
   useUpdateHomePageMutation,
   useAddTestimonialMutation,
+  useUpdateTestimonialMutation,
   useDeleteTestimonialMutation,
   useViewCountIncreamentQuery
 } = homePageApi;

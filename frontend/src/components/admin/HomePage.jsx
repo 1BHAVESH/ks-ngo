@@ -3,11 +3,11 @@ import { useForm } from "react-hook-form";
 import {
   useGetHomePageQuery,
   useUpdateHomePageMutation,
+  useUpdateTestimonialMutation,
 } from "@/redux/features/homePageApi";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
 const HomePage = () => {
+  const [updateTestimonial] = useUpdateTestimonialMutation();
   const [openSection, setOpenSection] = useState(null);
   const [editingTestimonialId, setEditingTestimonialId] = useState(null);
 
@@ -19,22 +19,17 @@ const HomePage = () => {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm();
 
   const [statsData, setStatsData] = useState({
     Cows_Rescued: 0,
-     Active_Volunteers: 0,
+    Active_Volunteers: 0,
     Years_of_Service: 0,
     Successful_Adoptions: 0,
   });
 
   const [testimonials, setTestimonials] = useState([]);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const watchPhoto = watch("photo");
-
-  const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
   useEffect(() => {
     if (data) {
@@ -43,33 +38,19 @@ const HomePage = () => {
     }
   }, [data]);
 
-  useEffect(() => {
-    if (watchPhoto?.[0] instanceof File) {
-      const url = URL.createObjectURL(watchPhoto[0]);
-      setPhotoPreview(url);
-      return () => URL.revokeObjectURL(url);
-    } else setPhotoPreview(null);
-  }, [watchPhoto]);
-
-  const fileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const handleOpenModal = (section, testimonial = null) => {
     setOpenSection(section);
-    setPhotoPreview(null);
 
     if (section === "stats") reset(statsData);
 
     if (section === "testimonials") {
       if (testimonial) {
-        reset(testimonial);
+        reset({
+          name: testimonial.name,
+          position: testimonial.position,
+          message: testimonial.message
+        });
         setEditingTestimonialId(testimonial.id);
-        setPhotoPreview(testimonial.photo);
       } else {
         reset({ name: "", position: "", message: "" });
         setEditingTestimonialId(null);
@@ -79,49 +60,53 @@ const HomePage = () => {
 
   const onSubmit = async (formData) => {
     try {
-      let updatedStats = statsData;
-      let updatedTestimonials = testimonials;
-
       if (openSection === "stats") {
-        updatedStats = {
+        const updatedStats = {
           Cows_Rescued: +formData.Cows_Rescued,
-           Active_Volunteers: +formData.Active_Volunteers,
-         Years_of_Service: +formData.Years_of_Service,
+          Active_Volunteers: +formData.Active_Volunteers,
+          Years_of_Service: +formData.Years_of_Service,
           Successful_Adoptions: +formData.Successful_Adoptions,
         };
+        
+        await updateHomePage({
+          stats: updatedStats,
+          testimonials: testimonials,
+        }).unwrap();
+        
         setStatsData(updatedStats);
       }
 
       if (openSection === "testimonials") {
-        const photo =
-          formData.photo?.[0] && (await fileToBase64(formData.photo[0]));
+        const testimonialData = {
+          name: formData.name,
+          position: formData.position,
+          message: formData.message
+        };
 
         if (editingTestimonialId) {
-          updatedTestimonials = testimonials.map((t) =>
-            t.id === editingTestimonialId
-              ? { ...t, ...formData, photo: photo || t.photo }
-              : t
-          );
+          // Update existing testimonial using separate API
+          await updateTestimonial({
+            id: editingTestimonialId,
+            ...testimonialData
+          }).unwrap();
         } else {
-          updatedTestimonials = [
+          // Add new testimonial
+          const updatedTestimonials = [
             ...testimonials,
-            { id: Date.now(), ...formData, photo },
+            { id: Date.now(), ...testimonialData },
           ];
+          
+          await updateHomePage({
+            stats: statsData,
+            testimonials: updatedTestimonials,
+          }).unwrap();
         }
-
-        setTestimonials(updatedTestimonials);
       }
-
-      console.log(formData)
-
-      await updateHomePage({
-        stats: updatedStats,
-        testimonials: updatedTestimonials,
-      }).unwrap();
 
       refetch();
       setOpenSection(null);
       reset();
+      setEditingTestimonialId(null);
     } catch (error) {
       console.error("Failed to update:", error);
     }
@@ -159,8 +144,6 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 p-3 sm:p-4 md:p-6 space-y-6 sm:space-y-8">
-      {/* PAGE HEADER */}
-
       {/* --------- STATS SECTION --------- */}
       <div className="bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-700">
         <SectionHeader
@@ -254,17 +237,10 @@ const HomePage = () => {
           <>
             {/* Desktop Table */}
             <DesktopTable
-              headers={["Photo", "Name", "Position", "Message", "Actions"]}
+              headers={["Name", "Position", "Message", "Actions"]}
             >
               {testimonials.map((t) => (
                 <tr key={t.id} className="hover:bg-gray-750 transition">
-                  <td className="border border-gray-600 p-3">
-                    <img
-                      src={t.photo}
-                      alt={t.name}
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-blue-500 mx-auto"
-                    />
-                  </td>
                   <td className="border border-gray-600 p-3 font-semibold text-gray-200">
                     {t.name}
                   </td>
@@ -301,20 +277,13 @@ const HomePage = () => {
                   key={t.id}
                   className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition shadow-lg"
                 >
-                  <div className="flex items-start gap-4 mb-3">
-                    <img
-                      src={t.photo}
-                      alt={t.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-white truncate">
-                        {t.name}
-                      </h3>
-                      <p className="text-sm text-gray-400 truncate">
-                        {t.position}
-                      </p>
-                    </div>
+                  <div className="mb-3">
+                    <h3 className="text-lg font-bold text-white mb-1">
+                      {t.name}
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      {t.position}
+                    </p>
                   </div>
 
                   <p className="text-gray-300 text-sm mb-4 line-clamp-3 bg-gray-800 p-3 rounded">
@@ -437,27 +406,6 @@ const HomePage = () => {
                   <p className="text-red-500 text-xs mt-1">
                     Message is required
                   </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  📷 Photo
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  {...register("photo")}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                />
-                {photoPreview && (
-                  <div className="mt-3 flex justify-center">
-                    <img
-                      src={photoPreview}
-                      alt="Preview"
-                      className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-                    />
-                  </div>
                 )}
               </div>
 

@@ -15,7 +15,7 @@ const homePageSchema = new mongoose.Schema({
   },
   stats: {
     Cows_Rescued: Number,
-     Active_Volunteers: Number,
+    Active_Volunteers: Number,
     Years_of_Service: Number,
     Successful_Adoptions: Number,
   },

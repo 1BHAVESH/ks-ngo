@@ -33,10 +33,12 @@ export const shubhamDevApi = createApi({
       providesTags: (r, e, id) => [{ type: "Project", id }],
     }),
 
-    // // ✅ NEW — VIDEO URL FETCH
-    // getProjectVideo: builder.query({
-    //   query: (id) => `/project-video/${id}/video`,
-    // }),
+    getBankDetail: builder.query({
+      query: () => ({
+        url: "/bank/",
+        method: "GET",
+      }),
+    }),
 
     getProjectTitle: builder.query({
       query: () => "/projects/get-title",
@@ -71,6 +73,7 @@ export const shubhamDevApi = createApi({
 export const {
   useEnquirySendMutation,
   useGetCowsQuery,
+  useGetBankDetailQuery,
   useGetProjectBySlugQuery,
   useGetProjectByIdQuery,
 

@@ -1,8 +1,19 @@
 import DonationForm from "@/components/DonateForm"
 import { Card } from "@/components/ui/card"
+import { useGetBankDetailQuery } from "@/redux/features/shubamdevApi"
 import { Heart, Shield } from "lucide-react"
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+
 export default function DonatePage() {
+  const {data, isLoading} = useGetBankDetailQuery()
+
+  if(isLoading) return <h1>wait...</h1>
+
+  const bankInfo = data?.data
+
+  console.log(bankInfo)
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -52,7 +63,7 @@ export default function DonatePage() {
 
                 <div className="w-56 h-56 bg-sage-light mx-auto flex items-center justify-center rounded-lg">
                   <img
-                    src="/qr-code-for-donation.jpg"
+                    src={`${API_URL}${bankInfo.qrCode}`}
                     alt="QR Code"
                     className="w-full h-full object-contain"
                   />
@@ -72,19 +83,19 @@ export default function DonatePage() {
                 <div className="space-y-3 text-earth">
                   <div>
                     <p className="font-semibold text-forest">Account Name:</p>
-                    <p>Cow Seva Trust</p>
+                    <p>{bankInfo.accountName}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-forest">Account Number:</p>
-                    <p>1234567890123</p>
+                    <p>{bankInfo.accountNumber}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-forest">IFSC Code:</p>
-                    <p>SBIN0001234</p>
+                    <p>{bankInfo.ifscCode}</p>
                   </div>
                   <div>
                     <p className="font-semibold text-forest">Bank Name:</p>
-                    <p>State Bank of India</p>
+                    <p>{bankInfo.bankName}</p>
                   </div>
                 </div>
               </Card>

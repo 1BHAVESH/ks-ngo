@@ -24,6 +24,12 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
+
+  // ⭐ IMPORTANT: agar file hi nahi hai → allow silently
+
+  console.log(file)
+  if (!file) return cb(null, false);
+
   const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 
   if (allowed.includes(file.mimetype)) cb(null, true);

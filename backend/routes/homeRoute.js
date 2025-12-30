@@ -3,7 +3,8 @@ import {
   getHomePage, 
   addTestimonial, 
   deleteTestimonial, 
-  createOrUpdateHomePage 
+  createOrUpdateHomePage, 
+  updateTestimonial
 } from "../controller/HomePageController.js";
 
 import multer from "multer";
@@ -44,6 +45,10 @@ router.post(
   addTestimonial
 );
 
+router.put(
+  "/homepage/testimonial/:testimonialId",
+  updateTestimonial
+);
 router.delete("/homepage/testimonial/:id", deleteTestimonial);
 
 export default router;

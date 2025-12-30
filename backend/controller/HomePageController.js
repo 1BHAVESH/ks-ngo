@@ -142,6 +142,43 @@ export const addTestimonial = async (req, res) => {
   }
 };
 
+export const updateTestimonial = async (req, res) => {
+  try {
+    const { testimonialId } = req.params;   // URL param
+    const updateData = req.body;           // new values
+
+    const home = await HomePage.findOne();
+    if (!home) {
+      return res.status(404).json({ message: "HomePage not found" });
+    }
+
+    // Find testimonial inside array
+    const testimonial = home.testimonials.id(testimonialId);
+
+    if (!testimonial) {
+      return res.status(404).json({ message: "Testimonial not found" });
+    }
+
+    // Update fields
+    Object.assign(testimonial, updateData);
+
+    await home.save();
+
+    res.json({
+      message: "Testimonial Updated",
+      data: testimonial,
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error updating testimonial",
+      error: error.message,
+    });
+  }
+};
+
+
 
 export const deleteTestimonial = async (req, res) => {
   try {
