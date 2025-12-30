@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { useGetHomePageQuery } from "@/redux/features/homePageApi";
+// import {  } from "@/redux/features/homePageApi";
 import { Card } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
+import { useGetStatsQuery } from "@/redux/features/adminApi";
 
 export default function Testimonials() {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const { data, isLoading } = useGetHomePageQuery();
+  const { data, isLoading } = useGetStatsQuery();
 
   if (isLoading) return <h1 className="text-center">wait...</h1>;
 

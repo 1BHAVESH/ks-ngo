@@ -16,7 +16,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Admin", "Banner", "CowImage", "Career", "Faq", "Media"],
+  tagTypes: ["Admin", "Banner", "CowImage", "Career", "Faq", "Media", "Stats",  "testemoinal"],
   endpoints: (builder) => ({
     adminLogin: builder.mutation({
       query: (credentials) => ({
@@ -391,6 +391,53 @@ export const adminApi = createApi({
         }
       },
     }),
+    getStats: builder.query({
+      query: () => ({
+        url: "/home/stats",
+        method: "GET"
+      }),
+      providesTags: ["Stats"]
+    }),
+    updateSates: builder.mutation({
+       query: (data) => ({
+        url: "/home/stats",
+        method: "PUT",
+        body: data
+      }),
+      providesTags: ["Stats"]
+    }),
+     getTestimonial: builder.query({
+      query: () => ({
+        url: "/home/testimonials",
+        method: "GET",
+        
+      }),
+      providesTags: ["testemoinal"],
+    }),
+    addTestimonial: builder.mutation({
+      query: (testimonialData) => ({
+        url: "/home/testimonials",
+        method: "POST",
+        body: testimonialData,
+      }),
+      invalidatesTags: ["testemoinal"],
+    }),
+    updateTestimonial: builder.mutation({
+      query: ({id, testimonialData}) => ({
+        url: `/home/testimonials/${id}`,
+        method: "PUT",
+        body: testimonialData,
+      }),
+      invalidatesTags: ["testemoinal"],
+    }),
+    deleteTestimonial: builder.mutation({
+      query: (id) => ({
+        url: `/home/testimonials/${id}`,
+        method: "DELETE",
+        
+      }),
+      invalidatesTags: ["testemoinal"],
+    }),
     searchEnquiries: builder.query({
       query: (q) => ({
         url: `/excel-enquiry/search?q=${encodeURIComponent(q)}`,
@@ -399,7 +446,6 @@ export const adminApi = createApi({
     }),
   }),
 });
-
 export const {
   useAdminLoginMutation,
   useAdminRegisterMutation,
@@ -448,4 +494,10 @@ export const {
   useBankInfoCreateMutation,
   useGetBankDetailQuery,
   useUpdateBankInfoMutation,
+  useGetStatsQuery,
+  useUpdateSatesMutation,
+  useAddTestimonialMutation,
+  useGetTestimonialQuery,
+  useUpdateTestimonialMutation,
+  useDeleteTestimonialMutation
 } = adminApi;

@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
-  useGetHomePageQuery,
-  useUpdateHomePageMutation,
+  useAddTestimonialMutation,
+  useGetStatsQuery,
+  useUpdateSatesMutation,
   useUpdateTestimonialMutation,
-} from "@/redux/features/homePageApi";
+  useDeleteTestimonialMutation,
+  useGetTestimonialQuery,
+} from "@/redux/features/adminApi";
 
 const HomePage = () => {
-  const [updateTestimonial] = useUpdateTestimonialMutation();
   const [openSection, setOpenSection] = useState(null);
   const [editingTestimonialId, setEditingTestimonialId] = useState(null);
 
-  const { data, isLoading, refetch } = useGetHomePageQuery();
-  const [updateHomePage, { isLoading: updateLoading }] =
-    useUpdateHomePageMutation();
+  // API Hooks
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useGetStatsQuery();
+  const { data: testimonialData, isLoading: testimonialLoading, refetch: refetchTestimonials } = useGetTestimonialQuery();
+  
+  const [updateStats, { isLoading: updateStatsLoading }] = useUpdateSatesMutation();
+  const [addTestimonial, { isLoading: addTestimonialLoading }] = useAddTestimonialMutation();
+  const [updateTestimonial, { isLoading: updateTestimonialLoading }] = useUpdateTestimonialMutation();
+  const [deleteTestimonial, { isLoading: deleteTestimonialLoading }] = useDeleteTestimonialMutation();
 
+  // Form Hook
   const {
     register,
     handleSubmit,
@@ -22,114 +30,139 @@ const HomePage = () => {
     formState: { errors },
   } = useForm();
 
-  const [statsData, setStatsData] = useState({
+  // Local State
+  const [stats, setStats] = useState({
     Cows_Rescued: 0,
     Active_Volunteers: 0,
     Years_of_Service: 0,
     Successful_Adoptions: 0,
   });
-
   const [testimonials, setTestimonials] = useState([]);
 
+  // Sync stats data from API to local state
   useEffect(() => {
-    if (data) {
-      setStatsData(data.stats || {});
-      setTestimonials(data.testimonials || []);
+    if (statsData) {
+      setStats({
+        Cows_Rescued: statsData.Cows_Rescued || 0,
+        Active_Volunteers: statsData.Active_Volunteers || 0,
+        Years_of_Service: statsData.Years_of_Service || 0,
+        Successful_Adoptions: statsData.Successful_Adoptions || 0,
+      });
     }
-  }, [data]);
+  }, [statsData]);
 
+  // Sync testimonials data from API to local state
+  useEffect(() => {
+    if (testimonialData) {
+      setTestimonials(testimonialData.testimonials || testimonialData || []);
+    }
+  }, [testimonialData]);
+
+  // Open Modal Handler
   const handleOpenModal = (section, testimonial = null) => {
     setOpenSection(section);
 
-    if (section === "stats") reset(statsData);
+    if (section === "stats") {
+      reset(stats);
+    }
 
     if (section === "testimonials") {
       if (testimonial) {
+        // Editing existing testimonial
+        console.log("Opening testimonial for editing:", testimonial);
+        
+        // Handle different possible ID property names
+        const testimonialId = testimonial._id || testimonial.id;
+        console.log("Testimonial ID:", testimonialId);
+        
         reset({
           name: testimonial.name,
           position: testimonial.position,
-          message: testimonial.message
+          message: testimonial.message,
         });
-        setEditingTestimonialId(testimonial.id);
+        setEditingTestimonialId(testimonialId);
       } else {
+        // Adding new testimonial
         reset({ name: "", position: "", message: "" });
         setEditingTestimonialId(null);
       }
     }
   };
 
+  // Close Modal Handler
+  const handleCloseModal = () => {
+    setOpenSection(null);
+    reset();
+    setEditingTestimonialId(null);
+  };
+
+  // Form Submit Handler
   const onSubmit = async (formData) => {
     try {
       if (openSection === "stats") {
+        // Update Statistics
         const updatedStats = {
           Cows_Rescued: +formData.Cows_Rescued,
           Active_Volunteers: +formData.Active_Volunteers,
           Years_of_Service: +formData.Years_of_Service,
           Successful_Adoptions: +formData.Successful_Adoptions,
         };
-        
-        await updateHomePage({
-          stats: updatedStats,
-          testimonials: testimonials,
-        }).unwrap();
-        
-        setStatsData(updatedStats);
+
+        await updateStats(updatedStats).unwrap();
+        setStats(updatedStats);
+        refetchStats();
       }
 
       if (openSection === "testimonials") {
         const testimonialData = {
           name: formData.name,
           position: formData.position,
-          message: formData.message
+          message: formData.message,
         };
 
         if (editingTestimonialId) {
-          // Update existing testimonial using separate API
+          console.log("Updating testimonial with ID:", editingTestimonialId);
+          
+          // Update existing testimonial
           await updateTestimonial({
             id: editingTestimonialId,
-            ...testimonialData
+            ...testimonialData,
           }).unwrap();
         } else {
-          // Add new testimonial
-          const updatedTestimonials = [
-            ...testimonials,
-            { id: Date.now(), ...testimonialData },
-          ];
+          console.log("Adding new testimonial");
           
-          await updateHomePage({
-            stats: statsData,
-            testimonials: updatedTestimonials,
-          }).unwrap();
+          // Add new testimonial
+          await addTestimonial(testimonialData).unwrap();
         }
+        
+        refetchTestimonials();
       }
 
-      refetch();
-      setOpenSection(null);
-      reset();
-      setEditingTestimonialId(null);
+      // Close modal after successful operation
+      handleCloseModal();
     } catch (error) {
       console.error("Failed to update:", error);
+      alert("Failed to save changes. Please try again.");
     }
   };
 
+  // Delete Testimonial Handler
   const handleDeleteTestimonial = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this testimonial?"))
+    if (!window.confirm("Are you sure you want to delete this testimonial?")) {
       return;
+    }
 
     try {
-      const updatedTestimonials = testimonials.filter((t) => t.id !== id);
-      setTestimonials(updatedTestimonials);
-
-      await updateHomePage({
-        stats: statsData,
-        testimonials: updatedTestimonials,
-      }).unwrap();
-
-      refetch();
+      await deleteTestimonial(id).unwrap();
+      refetchTestimonials();
     } catch (error) {
-      console.error("Failed to delete:", error);
+      console.error("Failed to delete testimonial:", error);
+      alert("Failed to delete testimonial. Please try again.");
     }
   };
+
+  // Combined Loading State
+  const isLoading = statsLoading || testimonialLoading;
 
   if (isLoading) {
     return (
@@ -161,7 +194,7 @@ const HomePage = () => {
           ]}
         >
           <tr className="hover:bg-gray-750 transition">
-            {Object.values(statsData).map((v, i) => (
+            {Object.values(stats).map((v, i) => (
               <td
                 key={i}
                 className="border border-gray-600 p-3 sm:p-4 text-center text-lg sm:text-xl font-bold text-blue-400"
@@ -177,25 +210,25 @@ const HomePage = () => {
           {[
             {
               label: "Cows Rescued",
-              value: statsData.Cows_Rescued,
+              value: stats.Cows_Rescued,
               icon: "🐄",
               color: "yellow",
             },
             {
               label: "Active Volunteers",
-              value: statsData.Active_Volunteers,
+              value: stats.Active_Volunteers,
               icon: "🙋",
               color: "blue",
             },
             {
               label: "Years of Service",
-              value: statsData.Years_of_Service,
+              value: stats.Years_of_Service,
               icon: "📅",
               color: "green",
             },
             {
               label: "Successful Adoptions",
-              value: statsData.Successful_Adoptions,
+              value: stats.Successful_Adoptions,
               icon: "🏠",
               color: "purple",
             },
@@ -236,76 +269,84 @@ const HomePage = () => {
         ) : (
           <>
             {/* Desktop Table */}
-            <DesktopTable
-              headers={["Name", "Position", "Message", "Actions"]}
-            >
-              {testimonials.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-750 transition">
-                  <td className="border border-gray-600 p-3 font-semibold text-gray-200">
-                    {t.name}
-                  </td>
-                  <td className="border border-gray-600 p-3 text-gray-400">
-                    {t.position}
-                  </td>
-                  <td className="border border-gray-600 p-3 text-gray-300 max-w-md">
-                    <div className="line-clamp-2">{t.message}</div>
-                  </td>
-                  <td className="border border-gray-600 p-3">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => handleOpenModal("testimonials", t)}
-                        className="bg-yellow-600 cursor-pointer hover:bg-yellow-700 text-white px-3 py-1.5 rounded text-sm transition"
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTestimonial(t.id)}
-                        className="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm transition"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+            <DesktopTable headers={["Name", "Position", "Message", "Actions"]}>
+              {testimonials.map((t) => {
+                // Handle both _id (MongoDB) and id
+                const testimonialId = t._id || t.id;
+                
+                return (
+                  <tr key={testimonialId} className="hover:bg-gray-750 transition">
+                    <td className="border border-gray-600 p-3 font-semibold text-gray-200">
+                      {t.name}
+                    </td>
+                    <td className="border border-gray-600 p-3 text-gray-400">
+                      {t.position}
+                    </td>
+                    <td className="border border-gray-600 p-3 text-gray-300 max-w-md">
+                      <div className="line-clamp-2">{t.message}</div>
+                    </td>
+                    <td className="border border-gray-600 p-3">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => handleOpenModal("testimonials", t)}
+                          className="bg-yellow-600 cursor-pointer hover:bg-yellow-700 text-white px-3 py-1.5 rounded text-sm transition"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTestimonial(testimonialId)}
+                          disabled={deleteTestimonialLoading}
+                          className="bg-red-600 cursor-pointer hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm transition disabled:opacity-50"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </DesktopTable>
 
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-              {testimonials.map((t) => (
-                <div
-                  key={t.id}
-                  className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition shadow-lg"
-                >
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-white mb-1">
-                      {t.name}
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      {t.position}
+              {testimonials.map((t) => {
+                // Handle both _id (MongoDB) and id
+                const testimonialId = t._id || t.id;
+                
+                return (
+                  <div
+                    key={testimonialId}
+                    className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition shadow-lg"
+                  >
+                    <div className="mb-3">
+                      <h3 className="text-lg font-bold text-white mb-1">
+                        {t.name}
+                      </h3>
+                      <p className="text-sm text-gray-400">{t.position}</p>
+                    </div>
+
+                    <p className="text-gray-300 text-sm mb-4 line-clamp-3 bg-gray-800 p-3 rounded">
+                      "{t.message}"
                     </p>
-                  </div>
 
-                  <p className="text-gray-300 text-sm mb-4 line-clamp-3 bg-gray-800 p-3 rounded">
-                    "{t.message}"
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleOpenModal("testimonials", t)}
-                      className="flex-1 cursor-pointer bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm transition"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTestimonial(t.id)}
-                      className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition"
-                    >
-                      🗑️ Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleOpenModal("testimonials", t)}
+                        className="flex-1 cursor-pointer bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm transition"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTestimonial(testimonialId)}
+                        disabled={deleteTestimonialLoading}
+                        className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition disabled:opacity-50"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
@@ -313,7 +354,7 @@ const HomePage = () => {
 
       {/* --------- MODAL --------- */}
       {openSection && (
-        <Modal onClose={() => setOpenSection(null)}>
+        <Modal onClose={handleCloseModal}>
           {openSection === "stats" && (
             <div className="space-y-4">
               <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
@@ -324,7 +365,10 @@ const HomePage = () => {
                 { name: "Cows_Rescued", label: "🐄 Cows Rescued" },
                 { name: "Active_Volunteers", label: "🙋 Active Volunteers" },
                 { name: "Years_of_Service", label: "📅 Years of Service" },
-                { name: "Successful_Adoptions", label: "🏠 Successful Adoptions" },
+                {
+                  name: "Successful_Adoptions",
+                  label: "🏠 Successful Adoptions",
+                },
               ].map((field) => (
                 <div key={field.name}>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -334,7 +378,7 @@ const HomePage = () => {
                     type="number"
                     {...register(field.name, { required: true, min: 0 })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    placeholder={`Enter number of ${field.label.toLowerCase()}`}
+                    placeholder={`Enter number`}
                   />
                   {errors[field.name] && (
                     <p className="text-red-500 text-xs mt-1">
@@ -346,10 +390,10 @@ const HomePage = () => {
 
               <button
                 onClick={handleSubmit(onSubmit)}
-                disabled={updateLoading}
+                disabled={updateStatsLoading}
                 className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {updateLoading ? "Saving..." : "💾 Save Statistics"}
+                {updateStatsLoading ? "Saving..." : "💾 Save Statistics"}
               </button>
             </div>
           )}
@@ -411,10 +455,10 @@ const HomePage = () => {
 
               <button
                 onClick={handleSubmit(onSubmit)}
-                disabled={updateLoading}
+                disabled={addTestimonialLoading || updateTestimonialLoading}
                 className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {updateLoading
+                {addTestimonialLoading || updateTestimonialLoading
                   ? "Saving..."
                   : editingTestimonialId
                   ? "💾 Update Testimonial"
@@ -430,7 +474,7 @@ const HomePage = () => {
 
 export default HomePage;
 
-// ========== COMPONENTS ==========
+// ========== REUSABLE COMPONENTS ==========
 
 const SectionHeader = ({ title, onClick, btnText = "✏️ Update" }) => (
   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">

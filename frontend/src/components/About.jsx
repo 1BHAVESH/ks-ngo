@@ -1,4 +1,4 @@
-import { useGetHomePageQuery } from "@/redux/features/homePageApi";
+// import { useGetHomePageQuery } from "@/redux/features/homePageApi";
 import {
   ArrowRight,
   Heart,

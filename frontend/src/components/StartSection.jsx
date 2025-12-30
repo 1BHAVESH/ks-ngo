@@ -1,14 +1,16 @@
 // components/StatsSection.jsx
 
-import { useGetHomePageQuery } from "@/redux/features/homePageApi";
+import { useGetStatsQuery } from "@/redux/features/adminApi";
+import {  } from "@/redux/features/homePageApi";
 import { Award, Building, Trophy, UsersRound, UserStar } from "lucide-react";
 
 export default function StatsSection() {
 
-   const { data, isLoading } = useGetHomePageQuery();
+   const { data, isLoading } = useGetStatsQuery();
   
     if (isLoading) return <h1 className="text-white">wait...</h1>;
 
+    console.log(data)
      const stat = data?.stats
 
     const stats = [

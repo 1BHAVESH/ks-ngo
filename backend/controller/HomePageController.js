@@ -14,120 +14,71 @@ export const getHomePage = async (req, res) => {
 
 
 
-function saveBase64Image(base64) {
-  if (!base64 || !base64.startsWith("data")) return base64;
+// 🟢 Get Stats
+export const getStats = async (req, res) => {
+  try {
+    const home = await HomePage.findOne().select("stats");
 
-  const matches = base64.match(/^data:(.+);base64,(.+)$/);
-  const ext = matches[1].split("/")[1];
-  const data = matches[2];
+    if (!home) {
+      return res.status(404).json({ message: "Home data not found" });
+    }
 
-  const fileName = Date.now() + "." + ext;
-  const filePath = path.join("uploads", fileName);
-
-  fs.writeFileSync(filePath, Buffer.from(data, "base64"));
-
-  return "/uploads/" + fileName;
-}
-
-
-
-const deleteOldFile = (dbPath) => {
-  if (!dbPath) return;
-
-  const cleanPath = dbPath.startsWith("/")
-    ? dbPath.slice(1)
-    : dbPath;
-
-  // final absolute path WITHOUT double backend
-  const absolutePath = path.join(process.cwd(), cleanPath);
-
-  // console.log("TRY DELETE:", absolutePath);
-
-  if (fs.existsSync(absolutePath)) {
-    fs.unlinkSync(absolutePath);
-    // console.log("Deleted:", absolutePath);
-  } else {
-    console.log("File Not Found:", absolutePath);
+    res.json(home.stats);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching stats" });
   }
 };
 
 
-export const createOrUpdateHomePage = async (req, res) => {
+// 🟡 Update Stats
+export const updateStats = async (req, res) => {
   try {
-    const body = req.body;
+    let home = await HomePage.findOne();
 
-    let homePage = await HomePage.findOne();
-    const oldData = homePage ? homePage.toObject() : null;
-
-    // --------------------------
-    // ABOUT IMAGE UPDATE HANDLER
-    // --------------------------
-    if (body.about && body.about.image) {
-      const newImg = body.about.image;
-
-      // agar **new image base64** ho → means update ho rahi hai
-      if (newImg.startsWith("data")) {
-        const savedImg = saveBase64Image(newImg);
-
-        // old image delete
-        if (oldData?.about?.image) {
-          console.log("OLD IMAGE FROM DB:", oldData?.about?.image);
-
-          deleteOldFile(oldData.about.image);
-        }
-
-        body.about.image = savedImg;
-      }
+    // Agar document hi nahi hai to create karo
+    if (!home) {
+      home = new HomePage({});
     }
 
-    // --------------------------
-    // TESTIMONIALS IMAGE UPDATE
-    // --------------------------
-    if (body.testimonials) {
-      let testimonials = body.testimonials;
+    home.stats = {
+      Cows_Rescued: req.body.Cows_Rescued,
+      Active_Volunteers: req.body.Active_Volunteers,
+      Years_of_Service: req.body.Years_of_Service,
+      Successful_Adoptions: req.body.Successful_Adoptions
+    };
 
-      if (typeof testimonials === "string") {
-        testimonials = JSON.parse(testimonials);
-      }
+    await home.save();
 
-      body.testimonials = testimonials.map((t, i) => {
-        const newPhoto = t.photo;
-
-        if (newPhoto?.startsWith("data")) {
-          const saved = saveBase64Image(newPhoto);
-
-          // old delete if exists
-          if (oldData?.testimonials?.[i]?.photo) {
-            deleteOldFile(oldData.testimonials[i].photo);
-          }
-
-          return { ...t, photo: saved };
-        }
-
-        return t;
-      });
-    }
-
-    // --------------------------
-    // CREATE / UPDATE
-    // --------------------------
-    if (!homePage) {
-      homePage = new HomePage(body);
-      await homePage.save();
-      return res.json({ message: "Home Page Created", data: homePage });
-    }
-
-    const updated = await HomePage.findOneAndUpdate({}, body, { new: true });
-    res.json({ message: "Home Page Updated", data: updated });
+    res.json({
+      message: "Stats Updated Successfully",
+      stats: home.stats
+    });
 
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Error", error: error.message });
+    res.status(500).json({ message: "Error updating stats" });
   }
 };
 
 
+export const getTestimonials = async (req, res) => {
+  try {
+    const home = await HomePage.findOne().select("testimonials");
 
+    if (!home) {
+      return res.status(404).json({ message: "Home data not found" });
+    }
+
+    // console.log(home)
+
+    res.json({
+      message: "Testimonials Fetched",
+      testimonials: home.testimonials
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching testimonials" });
+  }
+};
 
 
 export const addTestimonial = async (req, res) => {
@@ -138,13 +89,14 @@ export const addTestimonial = async (req, res) => {
 
     res.json({ message: "Testimonial Added", home });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: "Error adding testimonial" });
   }
 };
 
 export const updateTestimonial = async (req, res) => {
   try {
-    const { testimonialId } = req.params;   // URL param
+    const { id } = req.params;   // URL param
     const updateData = req.body;           // new values
 
     const home = await HomePage.findOne();
@@ -152,8 +104,14 @@ export const updateTestimonial = async (req, res) => {
       return res.status(404).json({ message: "HomePage not found" });
     }
 
+    console.log("###############",home.testimonials)
+
     // Find testimonial inside array
-    const testimonial = home.testimonials.id(testimonialId);
+
+    console.log("iddddddddddd", id)
+    const testimonial = home.testimonials.id(id);
+
+    console.log("test", testimonial)
 
     if (!testimonial) {
       return res.status(404).json({ message: "Testimonial not found" });
